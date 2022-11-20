@@ -4,20 +4,17 @@
 
 @layer components {
 	.HelloWorld {
-		@apply p-4 rounded text-4xl dark:text-white dark:bg-sidebar-bg-dark select-none transition-colors hover:bg-interactable-selected-bg-dark active:bg-interactable-bg-dark;
+		@apply p-4 rounded text-4xl dark:text-white dark:bg-dc-sidebar-bg-dark select-none transition-colors hover:bg-dc-interactable-selected-bg-dark active:bg-dc-interactable-bg-dark;
 	}
 	.bordermode * {
 		border: 1px solid #f00;
 	}
-	.toolbar > * {
+	.grayEmoji {
 		color: transparent;
 		text-shadow: 0 0 #a3a6aa;
 		transition: text-shadow 150ms;
-
-		width: 24px;
-		height: 24px;
 	}
-	.toolbar > *:hover {
+	.grayEmoji:hover {
 		text-shadow: 0 0 #b9bbbe;
 	}
 }
