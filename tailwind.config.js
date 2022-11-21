@@ -12,6 +12,7 @@ module.exports = {
 				"dc-msgInput-bg-dark": "#40444B",
 				"dc-interactable-bg-dark": "#202225",
 				"dc-interactable-selected-bg-dark": "#4F545C99",
+				"dc-msg-selected-dark": "#04040512",
 				//text-dark
 				"dc-primary-text-dark": "#DCDDDE",
 				"dc-sidebar-text-dark": "#96989D",
