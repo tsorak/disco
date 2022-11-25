@@ -1,5 +1,5 @@
 import { Component, onMount } from "solid-js";
-import Message from "./components/Message";
+import Message from "../components/Message";
 
 const App: Component = () => {
 	const chat = {
