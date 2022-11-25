@@ -1,5 +1,16 @@
+import server$ from "solid-start/server";
+import { Title, json, parseCookie, useServerContext } from "solid-start";
+
 import { Component, onMount } from "solid-js";
+import { isServer } from "solid-js/web";
 import Message from "../components/Message";
+
+const broadcastMessage = server$(async (msg, auth) => {
+	console.log(msg);
+	console.log(auth);
+
+	return json("Message recieved");
+});
 
 const App: Component = () => {
 	const chat = {
@@ -24,19 +35,16 @@ const App: Component = () => {
 
 		console.log("MSG:", msg);
 
-		fetch("http://localhost:8000/", {
-			headers: {
-				"content-type": "application/json",
-			},
-			credentials: "include",
-			method: "POST",
-			mode: "no-cors",
-			body: JSON.stringify({ msg }),
-		});
+		const serverContext = useServerContext();
+		const cookie = () => parseCookie(isServer ? serverContext.request.headers.get("cookie") ?? "" : document.cookie);
+		broadcastMessage(msg, cookie());
+
+		event.target.msg.value = null;
 	};
 
 	return (
 		<>
+			<Title>Disco - {chat.title}</Title>
 			<div class="flex h-screen dark:bg-dc-serverbar-bg-dark text-dc-sidebar-text-dark">
 				<nav class="w-[72px]"></nav>
 				<div class="flex-grow bg-dc-sidebar-bg-dark flex">
