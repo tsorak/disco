@@ -1,9 +1,10 @@
 import server$ from "solid-start/server";
-import { Title, json, parseCookie, useServerContext } from "solid-start";
+import { json, parseCookie, useServerContext } from "solid-start";
 
 import { Component, onMount } from "solid-js";
 import { isServer } from "solid-js/web";
 import Message from "../components/Message";
+import ChannelTitle from "../components/ChannelTitle";
 
 const broadcastMessage = server$(async (msg, auth) => {
 	console.log(msg);
@@ -13,21 +14,6 @@ const broadcastMessage = server$(async (msg, auth) => {
 });
 
 const App: Component = () => {
-	const chat = {
-		title: "Åtister",
-	};
-
-	const inputHandler = (event) => {
-		console.log(event.target.value);
-	};
-
-	const textInputSizeHandler = (event) => {
-		const inputLength = event.target.value.length;
-		console.log(inputLength);
-
-		event.target.size = inputLength;
-	};
-
 	const msgSubmit = (event: SubmitEvent) => {
 		event.preventDefault();
 		const msg = event.target.msg.value || null;
@@ -44,7 +30,6 @@ const App: Component = () => {
 
 	return (
 		<>
-			<Title>Disco - {chat.title}</Title>
 			<div class="flex h-screen dark:bg-dc-serverbar-bg-dark text-dc-sidebar-text-dark">
 				<nav class="w-[72px]"></nav>
 				<div class="flex-grow bg-dc-sidebar-bg-dark flex">
@@ -65,11 +50,7 @@ const App: Component = () => {
 					</div>
 					<div class="content dark:bg-dc-foreground-bg-dark flex-grow flex flex-col">
 						<section class="chat-header flex h-12 justify-between px-4 border-b-[2px] dark:border-[#0002] box-content">
-							{/* <form class="title">
-							</form> */}
-							<form class="channel-name flex" onchange={inputHandler} onSubmit={(e) => e.preventDefault()}>
-								<input class="bg-transparent text-dc-primary-text-dark focus:outline-none font-semibold text-lg leading-none flex-shrink-1" type="text" name="chat_title" id="chat_title" value={chat.title} size={chat.title.length / 2} oninput={textInputSizeHandler} autocomplete="off" spellcheck={false} />
-							</form>
+							<ChannelTitle />
 							<div class="toolbar flex items-center gap-4">
 								<button class="grayEmoji">📞</button>
 								<button class="grayEmoji">🎥</button>
