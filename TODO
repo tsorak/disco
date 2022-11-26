@@ -1,0 +1,12 @@
+API
+    Database (db.ts)
+        ☐ Add SQL queries
+        ☐ Add database adapter/interface @started(22-11-26 21:11)
+    
+    ☐ Add Authentication
+
+    ☐ Add Authorization (JWT --> validate.ts)
+
+App
+    index.tsx
+        ☐ Show recieved messages
