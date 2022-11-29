@@ -8,18 +8,20 @@ async function handle(conn: Deno.Conn) {
 }
 
 function handleReq(req: Request): Response {
-    const cookies = new Map();
-    req.headers
-        .get("cookie")
-        .replace(" ", "")
-        .split(";")
-        .forEach((cookie) => {
-            const [k, v] = cookie.split("=");
-            cookies.set(k, v);
-        });
-    console.log(cookies);
+    const token: string =
+        req.headers
+            .get("cookie")
+            .replace(" ", "")
+            .split(";")
+            .find((cookie) => {
+                const [k, _v] = cookie.split("=");
+                return k === "discoToken";
+            })
+            ?.split("=")[1] ?? "";
 
-    if (!isAuthorized(cookies)) return new Response(null, { status: 401 });
+    if (!token) return new Response(null, { status: 400 });
+
+    if (!isAuthorized(token)) return new Response(null, { status: 401 });
 
     const upgrade = req.headers.get("upgrade") || "";
     if (upgrade.toLowerCase() != "websocket") {
@@ -45,6 +47,7 @@ function handleReq(req: Request): Response {
                     );
                     break;
                 case "chat":
+                    // { msg, token: cookie().discoToken, target: "@me/åtister", sender: loggedInUser.uuid }
                     break;
                 default:
                     console.log(incomingMessage);
