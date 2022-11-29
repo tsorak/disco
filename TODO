@@ -1,3 +1,6 @@
+*
+    ☐ add timestamps to messages
+
 API
     Database (db.ts)
         ☐ Add SQL queries
@@ -7,6 +10,10 @@ API
 
     ☐ Add Authorization (JWT --> validate.ts)
 
+    ✔ Recieve and broadcast messages @started(22-11-29 14:01) @done(22-11-29 15:58) @lasted(1h57m59s)
+
 App
     index.tsx
-        ☐ Show recieved messages
+        ✔ Show recieved messages @done(22-11-29 16:04)
+        
+        ☐ fix message text inline overflow

@@ -33,29 +33,46 @@ db.execute(`
     uuid TEXT,
     name TEXT,
     password TEXT,
-    subscribedChannels TEXT
+    subscriptions TEXT
   )
 `);
-
-const channel = {
-    create: ({}) => {},
-    exists: ({}) => {},
-    members: {
-        add: () => {},
-        remove: () => {},
-    },
-    message: {
-        add: () => {},
-        remove: () => {},
-        react: {
-            add: () => {},
-            remove: () => {},
-        },
-    },
-};
+db.execute(`
+  CREATE TABLE IF NOT EXISTS channels (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    uuid TEXT,
+    name TEXT,
+    type TEXT,
+    subscribers TEXT
+  )
+`);
 
 const user = {
     register: (options) => {},
     login: (options) => {},
     exists: (uuid: string) => {},
+    subscriptions: {
+        subscribe: (uuid: string) => {},
+        unsubscribe: (uuid: string) => {},
+    },
+};
+
+const channel = {
+    create: ({}) => {},
+    exists: ({}) => {},
+    getType: (uuid: string) => {},
+    subscribers: {
+        add: () => {},
+        remove: () => {},
+    },
+};
+
+// const channelCollection ???
+
+const message = {
+    add: () => {},
+    remove: () => {},
+    reaction: {
+        add: () => {},
+        remove: () => {},
+    },
 };

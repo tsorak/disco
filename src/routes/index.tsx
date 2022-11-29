@@ -6,16 +6,35 @@ import Message from "../components/Message";
 import ChannelTitle from "../components/ChannelTitle";
 
 const App: Component = () => {
-    const [lastPing, setLastPing] = createSignal(null);
+    const [lastPing, setLastPing] = createSignal("-");
+    const [activeMessages, setActiveMessages] = createSignal([]);
+    const [socketConnected, setSocketConnected] = createSignal(false);
+
+    const loggedInUser = {
+        username: "karots",
+        uuid: crypto.randomUUID(),
+    };
+
+    let scrollDiv: HTMLOListElement | undefined;
 
     let ping;
     let websocket: WebSocket | undefined;
+
+    function sendWebSocketMessage(type, data) {
+        websocket.send(JSON.stringify({ type, data }));
+    }
 
     createEffect(() => {
         // console.log(fetch(`${location.origin}/api/socket`));
 
         websocket = new WebSocket(`${location.origin.replace("http", "ws").replace("3000", "8080")}`);
         console.log(websocket);
+
+        websocket.addEventListener("open", (event) => {
+            // websocket.send({ type: "login", data: { msg, token: cookie().discoToken, target: "@me/åtister", sender: loggedInUser.uuid } }) ??????????????
+            console.log("Socket Opened", event);
+            setSocketConnected(true);
+        });
 
         websocket.addEventListener("message", (event) => {
             try {
@@ -24,23 +43,24 @@ const App: Component = () => {
                 return;
             }
             const message = JSON.parse(event.data);
+
+            if (message.type !== "pong") console.log(message.data);
+
             switch (message.type) {
                 case "pong":
                     setLastPing(Number(message.data.time) - ping);
                     break;
+                case "chat":
+                    //TODO: Add to activeMessages[] | activeMessages.map <Message
+                    setActiveMessages([...activeMessages(), message.data]);
                 default:
-                    console.log(message);
                     break;
             }
         });
 
-        function sendWebSocketMessage(type, data) {
-            // console.log(type, data);
-            websocket.send(JSON.stringify({ type, data }));
-        }
-
         websocket.addEventListener("close", (event) => {
-            console.log(event);
+            console.log("Socket Closed", event);
+            setSocketConnected(false);
         });
 
         // client ping <-> server pong
@@ -69,14 +89,19 @@ const App: Component = () => {
         const serverContext = useServerContext();
         const cookie = () => parseCookie(isServer ? serverContext.request.headers.get("cookie") ?? "" : document.cookie);
 
-        websocket.send(JSON.stringify({ type: "chat", data: { msg, token: cookie().discoToken, target: "@me/åtister" } }));
+        websocket.send(JSON.stringify({ type: "chat", data: { msg, target: "@me/åtister", sender: loggedInUser.uuid, token: cookie().discoToken } }));
 
         event.target.msg.value = null;
     };
 
+    createEffect(() => {
+        activeMessages().length;
+        scrollDiv.scrollTop = scrollDiv.scrollHeight - scrollDiv.clientHeight;
+    });
+
     return (
         <>
-            <div class="flex h-screen dark:bg-dc-serverbar-bg-dark text-dc-sidebar-text-dark">
+            <div class="flex h-screen w-screen dark:bg-dc-serverbar-bg-dark text-dc-sidebar-text-dark">
                 <nav class="w-[72px]"></nav>
                 <div class="flex-grow bg-dc-sidebar-bg-dark flex">
                     <div class="sidebar w-60 flex flex-col">
@@ -95,8 +120,13 @@ const App: Component = () => {
                             </div>
                         </nav>
                         <section class="panels">
-                            <div class="connectionInfo">
-                                <h1>{lastPing}</h1>
+                            <div class="connectionInfo select-none text-white">
+                                {socketConnected() && (
+                                    <h1 class="px-1 bg-green-700">
+                                        Connected <span>{lastPing()}ms</span>
+                                    </h1>
+                                )}
+                                {!socketConnected() && <h1 class="px-1 bg-red-800">Disconnected</h1>}
                             </div>
                             <div class="profile h-[52px] dark:bg-dc-profile-bg-dark"></div>
                         </section>
@@ -115,16 +145,21 @@ const App: Component = () => {
                                 <button class="w-6 h-6 dark:text-dc-foreground-bg-dark dark:bg-dc-placeholder-text-dark dark:hover:bg-dc-interactable-text-dark rounded-full font-semibold">?</button>
                             </div>
                         </section>
-                        <div class="chatarea flex-grow flex">
+                        <div class="chatarea flex-grow flex h-0">
                             <div class="chatContent flex-grow flex flex-col">
-                                <main class="chat flex-grow overflow-y-auto">
-                                    <div class="scrollContent w-full">
-                                        <ol class="list-none">
-                                            <Message id={"1"} sender={{ id: undefined, name: undefined }} reactions={[{ emote: "😐", count: 1 }]} date={undefined} content={"Hello World!"} />
+                                <main class="chat flex-grow h-0">
+                                    <div class="scrollContent h-full flex flex-col">
+                                        <ol class="list-none overflow-y-auto flex-grow h-0" ref={scrollDiv}>
+                                            {/* <Message id={"1"} sender={{ id: undefined, name: undefined }} reactions={[{ emote: "😐", count: 1 }]} date={undefined} content={"Hello World!"} />
+                                            <Message content={"Hello World!"} /> */}
+                                            {activeMessages().map((chatEntry) => (
+                                                <Message content={chatEntry.msg} sender={{ name: chatEntry.sender.name }} />
+                                            ))}
+                                            <div class="spacer h-6"></div>
                                         </ol>
                                     </div>
                                 </main>
-                                <form class="chatInput h-[44px] mb-6 mx-4 dark:bg-dc-msgInput-bg-dark rounded flex" onSubmit={msgSubmit}>
+                                <form class="chatInput basis-11 mb-6 mx-4 dark:bg-dc-msgInput-bg-dark rounded flex" onSubmit={msgSubmit}>
                                     <div class="flex items-center px-3">
                                         <button class="w-7 h-7 text-[22px] dark:text-dc-foreground-bg-dark dark:bg-dc-placeholder-text-dark dark:hover:bg-dc-interactable-text-dark rounded-full font-semibold" type={"button"}>
                                             <span class="absolute -translate-x-[7.5px] -translate-y-[19px]">+</span>

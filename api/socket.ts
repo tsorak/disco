@@ -7,6 +7,17 @@ async function handle(conn: Deno.Conn) {
     }
 }
 
+const connectedSockets: Map<string, WebSocket> = new Map();
+
+//TODO: sender: User, targets: channel.subscribers
+function broadcastMessage(options: { sender: { name: string | undefined } | undefined; targets: WebSocket[] | undefined; msg: string }) {
+    const { msg } = options;
+    const targets = options.targets ?? Array.from(connectedSockets).map(([_, v]) => v);
+    const sender = options.sender ?? { name: "AnonymousUser" };
+
+    targets.forEach((target) => target.send(JSON.stringify({ type: "chat", data: { sender, msg } })));
+}
+
 function handleReq(req: Request): Response {
     const token: string =
         req.headers
@@ -29,11 +40,18 @@ function handleReq(req: Request): Response {
     }
 
     const { socket, response } = Deno.upgradeWebSocket(req);
-    socket.onopen = () => console.log("socket opened");
+    socket.onopen = () => {
+        socket.id = crypto.randomUUID();
+        connectedSockets.set(socket.id, socket);
+        console.log(`Socket Opened %c${socket.id}`, "color:#0f0");
+    };
     socket.onmessage = (e) => {
         try {
             // Parse the incoming message
             let incomingMessage = JSON.parse(e.data);
+
+            if (incomingMessage.type !== "ping") console.log(`[RECIEVED]`, incomingMessage);
+
             switch (incomingMessage.type) {
                 case "ping":
                     socket.send(
@@ -47,10 +65,16 @@ function handleReq(req: Request): Response {
                     );
                     break;
                 case "chat":
-                    // { msg, token: cookie().discoToken, target: "@me/åtister", sender: loggedInUser.uuid }
+                    // { msg, target: "@me/åtister", sender: loggedInUser.uuid, token: cookie().discoToken }
+                    if (!isAuthorized(incomingMessage.data.token)) throw new Error("401");
+
+                    const msg: string = incomingMessage.data.msg.toString();
+                    // const targets: WebSocket[] = getChannelSubscribers(incomingMessage.data.target);
+
+                    //TODO: broadcast to sockets subscribed to the target.
+                    broadcastMessage({ msg });
                     break;
                 default:
-                    console.log(incomingMessage);
                     break;
             }
         } catch (err) {
@@ -60,7 +84,10 @@ function handleReq(req: Request): Response {
         }
     };
     socket.onerror = (e) => console.log("socket errored:", e);
-    socket.onclose = () => console.log("socket closed");
+    socket.onclose = () => {
+        connectedSockets.delete(socket.id);
+        console.log(`Socket Closed %c${socket.id}`, "color:#f00");
+    };
     return response;
 }
 
