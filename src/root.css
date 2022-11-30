@@ -3,29 +3,33 @@
 @tailwind utilities;
 
 @layer components {
-	.HelloWorld {
-		@apply p-4 rounded text-4xl dark:text-white dark:bg-dc-sidebar-bg-dark select-none transition-colors hover:bg-dc-interactable-selected-bg-dark active:bg-dc-interactable-bg-dark;
-	}
-	.bordermode * {
-		border: 1px solid #f00;
-	}
-	.grayEmoji {
-		color: transparent;
-		text-shadow: 0 0 #a3a6aa;
-		transition: text-shadow 150ms;
-	}
-	.grayEmoji:hover {
-		text-shadow: 0 0 #b9bbbe;
-	}
+  .HelloWorld {
+    @apply p-4 rounded text-4xl dark:text-white dark:bg-dc-sidebar-bg-dark select-none transition-colors hover:bg-dc-interactable-selected-bg-dark active:bg-dc-interactable-bg-dark;
+  }
+
+  .bordermode * {
+    border: 1px solid #f00;
+  }
+
+  .grayEmoji {
+    color: #a3a6aa;
+    /* text-shadow: 0 0 #a3a6aa; */
+    transition: color 150ms;
+  }
+
+  .grayEmoji:hover {
+    color: #b9bbbe;
+    /* text-shadow: 0 0 #b9bbbe; */
+  }
 }
 
 body {
-	margin: 0;
-	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
-	-webkit-font-smoothing: antialiased;
-	-moz-osx-font-smoothing: grayscale;
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 code {
-	font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;
+  font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;
 }
