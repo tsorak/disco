@@ -15,7 +15,7 @@ const App: Component = () => {
         uuid: crypto.randomUUID(),
     };
 
-    let scrollDiv: HTMLOListElement | undefined;
+    let scrollDiv: HTMLDivElement | undefined;
 
     let ping;
     let websocket: WebSocket | undefined;
@@ -51,7 +51,6 @@ const App: Component = () => {
                     setLastPing(Number(message.data.time) - ping);
                     break;
                 case "chat":
-                    //TODO: Add to activeMessages[] | activeMessages.map <Message
                     setActiveMessages([...activeMessages(), message.data]);
                 default:
                     break;
@@ -101,10 +100,10 @@ const App: Component = () => {
 
     return (
         <>
-            <div class="flex h-screen w-screen dark:bg-dc-serverbar-bg-dark text-dc-sidebar-text-dark">
-                <nav class="w-[72px]"></nav>
+            <div class="flex h-screen dark:bg-dc-serverbar-bg-dark text-dc-sidebar-text-dark">
+                <nav class="w-[72px] flex-none"></nav>
                 <div class="flex-grow bg-dc-sidebar-bg-dark flex">
-                    <div class="sidebar w-60 flex flex-col">
+                    <div class="sidebar w-60 flex flex-col flex-none">
                         <nav class="privateChannels flex flex-col flex-grow h-0">
                             <div class="flex h-12 border-b-[2px] dark:border-[#0002] box-content">
                                 <button class="m-[10px] bg-dc-serverbar-bg-dark flex-grow rounded text-sm p-1 px-[6px] text-left tracking-tight font-semibold" type="button">
@@ -132,7 +131,7 @@ const App: Component = () => {
                         </section>
                     </div>
                     <div class="content dark:bg-dc-foreground-bg-dark flex-grow flex flex-col">
-                        <section class="chat-header flex h-12 justify-between px-4 border-b-[2px] dark:border-[#0002] box-content">
+                        <section class="chat-header flex h-12 justify-between px-4 border-b-[2px] dark:border-[#0002] box-content flex-none">
                             <ChannelTitle />
                             <div class="toolbar flex items-center gap-4">
                                 <button class="grayEmoji">📞</button>
@@ -146,10 +145,10 @@ const App: Component = () => {
                             </div>
                         </section>
                         <div class="chatarea flex-grow flex h-0">
-                            <div class="chatContent flex-grow flex flex-col">
-                                <main class="chat flex-grow h-0">
-                                    <div class="scrollContent h-full flex flex-col">
-                                        <ol class="list-none overflow-y-auto flex-grow h-0" ref={scrollDiv}>
+                            <div class="chatContent flex flex-col flex-grow">
+                                <main class="chat flex-grow h-0 overflow-hidden">
+                                    <div class="scrollContent h-full overflow-y-auto" ref={scrollDiv}>
+                                        <ol class="list-none flex flex-col break-all">
                                             {/* <Message id={"1"} sender={{ id: undefined, name: undefined }} reactions={[{ emote: "😐", count: 1 }]} date={undefined} content={"Hello World!"} />
                                             <Message content={"Hello World!"} /> */}
                                             {activeMessages().map((chatEntry) => (
@@ -166,7 +165,7 @@ const App: Component = () => {
                                         </button>
                                     </div>
                                     <div class="flex-grow flex">
-                                        <input class="flex-grow bg-transparent text-dc-primary-text-dark focus:outline-none" type="text" name="msg" id="msg" autocomplete="off" spellcheck={false} />
+                                        <input class="bg-transparent text-dc-primary-text-dark focus:outline-none w-full min-w-[1rem]" type="text" name="msg" id="msg" autocomplete="off" spellcheck={false} />
                                     </div>
                                     <div class="flex items-center gap-3 text-lg px-3">
                                         <button class="grayEmoji">🎁</button>
@@ -178,7 +177,7 @@ const App: Component = () => {
                                     </div>
                                 </form>
                             </div>
-                            <div class="members w-60 dark:bg-dc-sidebar-bg-dark"></div>
+                            <div class="members w-60 dark:bg-dc-sidebar-bg-dark flex-none"></div>
                         </div>
                     </div>
                 </div>

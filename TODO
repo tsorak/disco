@@ -16,4 +16,4 @@ App
     index.tsx
         ✔ Show recieved messages @done(22-11-29 16:04)
         
-        ☐ fix message text inline overflow
+        ✔ fix message text inline overflow @done(22-11-30 11:42)
