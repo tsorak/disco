@@ -4,7 +4,10 @@
 API
     Database (db.ts)
         ☐ Add SQL queries
-        ☐ Add database adapter/interface @started(22-11-26 21:11)
+        ☐ Add database adapter/interface
+
+        Test
+            ☐ Put and get a JSON object
     
     ☐ Add Authentication
 
@@ -17,3 +20,9 @@ App
         ✔ Show recieved messages @done(22-11-29 16:04)
         
         ✔ fix message text inline overflow @done(22-11-30 11:42)
+
+        socket
+            ☐ try to reconnect socket if connection has been lost every n seconds
+            ☐ Ping only if state is CONNECTED
+        
+        ✔ use lucide icons @done(22-12-01 09:53)

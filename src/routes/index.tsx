@@ -1,4 +1,4 @@
-import { Gift, Sticker, Smile, HelpCircle, Inbox, Users, UserPlus, Pin, Video, PhoneCall } from "lucide-solid";
+import { PlusCircle, Gift, Sticker, Smile, HelpCircle, Inbox, Users, UserPlus, Pin, Video, PhoneCall, User, Phone } from "lucide-solid";
 
 import { json, parseCookie, useServerContext } from "solid-start";
 
@@ -136,16 +136,29 @@ const App: Component = () => {
             <section class="chat-header flex h-12 justify-between px-4 border-b-[2px] dark:border-[#0002] box-content flex-none">
               <ChannelTitle />
               <div class="toolbar flex items-center gap-4">
-                <button class="grayEmoji">📞</button>
-                <button class="grayEmoji">🎥</button>
-                <button class="grayEmoji">📌</button>
-                <button class="grayEmoji">👤</button>
-                <button class="grayEmoji">👥</button>
+                <button class="grayEmoji">
+                  <PhoneCall />
+                </button>
+                <button class="grayEmoji">
+                  <Video />
+                </button>
+                <button class="grayEmoji">
+                  <Pin />
+                </button>
+                <button class="grayEmoji">
+                  <User />
+                </button>
+                <button class="grayEmoji">
+                  <Users />
+                </button>
                 <input class="bg-dc-serverbar-bg-dark rounded text-sm p-1 px-[6px] text-left tracking-tight font-normal w-36 focus:outline-none" type="text" placeholder="Search" />
                 <button class="grayEmoji">
                   <Inbox />
                 </button>
-                <button class="w-6 h-6 dark:text-dc-foreground-bg-dark dark:bg-dc-placeholder-text-dark dark:hover:bg-dc-interactable-text-dark rounded-full font-semibold">?</button>
+                {/* <button class="w-6 h-6 dark:text-dc-foreground-bg-dark dark:bg-dc-placeholder-text-dark dark:hover:bg-dc-interactable-text-dark rounded-full font-semibold">?</button> */}
+                <button class="grayEmoji">
+                  <HelpCircle />
+                </button>
               </div>
             </section>
             <div class="chatarea flex-grow flex h-0">
@@ -164,19 +177,29 @@ const App: Component = () => {
                 </main>
                 <form class="chatInput basis-11 mb-6 mx-4 dark:bg-dc-msgInput-bg-dark rounded flex" onSubmit={msgSubmit}>
                   <div class="flex items-center px-3">
-                    <button class="w-7 h-7 text-[22px] dark:text-dc-foreground-bg-dark dark:bg-dc-placeholder-text-dark dark:hover:bg-dc-interactable-text-dark rounded-full font-semibold" type={"button"}>
+                    {/* <button class="w-7 h-7 text-[22px] dark:text-dc-foreground-bg-dark dark:bg-dc-placeholder-text-dark dark:hover:bg-dc-interactable-text-dark rounded-full font-semibold" type={"button"}>
                       <span class="absolute -translate-x-[7.5px] -translate-y-[19px]">+</span>
+                    </button> */}
+                    <button class="grayEmoji">
+                      <PlusCircle />
                     </button>
                   </div>
                   <div class="flex-grow flex">
                     <input class="bg-transparent text-dc-primary-text-dark focus:outline-none w-full min-w-[1rem]" type="text" name="msg" id="msg" autocomplete="off" spellcheck={false} />
                   </div>
                   <div class="flex items-center gap-3 text-lg px-3">
-                    <button class="grayEmoji">🎁</button>
+                    <button class="grayEmoji">
+                      <Gift />
+                    </button>
                     <button class="text-xs py-[2px] px-1 dark:text-dc-foreground-bg-dark dark:bg-dc-placeholder-text-dark dark:hover:bg-dc-interactable-text-dark rounded font-extrabold">GIF</button>
-                    <button class="grayEmoji">📁</button>
-                    <button class="w-6 h-6 text-xs py-[2px] px-1 dark:text-dc-foreground-bg-dark dark:bg-dc-placeholder-text-dark dark:hover:bg-dc-interactable-text-dark rounded-full font-extrabold">
+                    <button class="grayEmoji">
+                      <Sticker />
+                    </button>
+                    {/* <button class="w-6 h-6 text-xs py-[2px] px-1 dark:text-dc-foreground-bg-dark dark:bg-dc-placeholder-text-dark dark:hover:bg-dc-interactable-text-dark rounded-full font-extrabold">
                       <span class="absolute rotate-90 -translate-x-1 -translate-y-2">{`: )`}</span>
+                    </button> */}
+                    <button class="grayEmoji">
+                      <Smile />
                     </button>
                   </div>
                 </form>

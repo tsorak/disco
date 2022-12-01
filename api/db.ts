@@ -35,7 +35,7 @@ db.execute(`
     password TEXT,
     subscriptions TEXT
   )
-`);
+`); //subscriptions jsonb
 db.execute(`
   CREATE TABLE IF NOT EXISTS channels (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -47,32 +47,32 @@ db.execute(`
 `);
 
 const user = {
-    register: (options) => {},
-    login: (options) => {},
-    exists: (uuid: string) => {},
-    subscriptions: {
-        subscribe: (uuid: string) => {},
-        unsubscribe: (uuid: string) => {},
-    },
+  register: (options) => {},
+  login: (options) => {},
+  exists: (uuid: string) => {},
+  subscriptions: {
+    subscribe: (uuid: string) => {},
+    unsubscribe: (uuid: string) => {},
+  },
 };
 
 const channel = {
-    create: ({}) => {},
-    exists: ({}) => {},
-    getType: (uuid: string) => {},
-    subscribers: {
-        add: () => {},
-        remove: () => {},
-    },
+  create: ({}) => {},
+  exists: ({}) => {},
+  getType: (uuid: string) => {},
+  subscribers: {
+    add: () => {},
+    remove: () => {},
+  },
 };
 
 // const channelCollection ???
 
 const message = {
+  add: () => {},
+  remove: () => {},
+  reaction: {
     add: () => {},
     remove: () => {},
-    reaction: {
-        add: () => {},
-        remove: () => {},
-    },
+  },
 };
