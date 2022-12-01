@@ -8,9 +8,12 @@ import Message from "../components/Message";
 import ChannelTitle from "../components/ChannelTitle";
 
 const App: Component = () => {
-  const [lastPing, setLastPing] = createSignal("-");
+  const [lastPing, setLastPing] = createSignal<string | number>("-");
   const [activeMessages, setActiveMessages] = createSignal([]);
   const [socketConnected, setSocketConnected] = createSignal(false);
+
+  const serverContext = useServerContext();
+  const cookie = () => parseCookie(isServer ? serverContext.request.headers.get("cookie") ?? "" : document.cookie);
 
   const loggedInUser = {
     username: "karots",
@@ -26,19 +29,16 @@ const App: Component = () => {
     websocket.send(JSON.stringify({ type, data }));
   }
 
-  createEffect(() => {
-    // console.log(fetch(`${location.origin}/api/socket`));
+  function initSocket(url: string): WebSocket {
+    const socket = new WebSocket(url);
 
-    websocket = new WebSocket(`${location.origin.replace("http", "ws").replace("3000", "8080")}`);
-    console.log(websocket);
-
-    websocket.addEventListener("open", (event) => {
+    socket.addEventListener("open", (event) => {
       // websocket.send({ type: "login", data: { msg, token: cookie().discoToken, target: "@me/åtister", sender: loggedInUser.uuid } }) ??????????????
       console.log("Socket Opened", event);
-      setSocketConnected(true);
+      sendWebSocketMessage("connect", { token: cookie().discoToken });
     });
 
-    websocket.addEventListener("message", (event) => {
+    socket.addEventListener("message", (event) => {
       try {
         JSON.parse(event.data);
       } catch (e) {
@@ -46,9 +46,12 @@ const App: Component = () => {
       }
       const message = JSON.parse(event.data);
 
-      if (message.type !== "pong") console.log(message.data);
+      if (message.type != "pong") console.log(message.data);
 
       switch (message.type) {
+        case "connect":
+          setSocketConnected(true);
+          break;
         case "pong":
           setLastPing(Number(message.data.time) - ping);
           break;
@@ -59,12 +62,48 @@ const App: Component = () => {
       }
     });
 
-    websocket.addEventListener("close", (event) => {
+    socket.addEventListener("close", (event) => {
       console.log("Socket Closed", event);
       setSocketConnected(false);
     });
 
-    // client ping <-> server pong
+    socket.addEventListener("error", (event) => {
+      console.log("Socket Errored :>> ", event);
+    });
+
+    return socket;
+  }
+
+  onMount(() => {
+    websocket = initSocket(`${location.origin.replace("http", "ws").replace("3000", "8080")}`);
+    console.log(websocket);
+
+    onCleanup(() => {
+      websocket.close();
+    });
+  });
+
+  //Reconnect
+  createEffect(() => {
+    if (socketConnected()) return;
+
+    let interval = setInterval(() => {
+      console.log("Attempting to reconnect...");
+
+      try {
+        websocket = initSocket(`${location.origin.replace("http", "ws").replace("3000", "8080")}`);
+      } catch (e) {}
+    }, 5000);
+
+    onCleanup(() => {
+      clearInterval(interval);
+    });
+  });
+
+  // client ping <-> server pong
+  createEffect(() => {
+    if (!socketConnected()) return;
+
     let interval = setInterval(() => {
       try {
         const id = crypto.randomUUID();
@@ -75,11 +114,15 @@ const App: Component = () => {
 
     onCleanup(() => {
       clearInterval(interval);
-      websocket.close();
     });
   });
 
-  //handlers
+  //Autoscroll
+  createEffect(() => {
+    activeMessages().length;
+    scrollDiv.scrollTop = scrollDiv.scrollHeight - scrollDiv.clientHeight;
+  });
+
   const msgSubmit = (event: SubmitEvent) => {
     event.preventDefault();
     const msg = event.target.msg.value || null;
@@ -87,18 +130,10 @@ const App: Component = () => {
 
     console.log("MSG:", msg);
 
-    const serverContext = useServerContext();
-    const cookie = () => parseCookie(isServer ? serverContext.request.headers.get("cookie") ?? "" : document.cookie);
-
     websocket.send(JSON.stringify({ type: "chat", data: { msg, target: "@me/åtister", sender: loggedInUser.uuid, token: cookie().discoToken } }));
 
     event.target.msg.value = null;
   };
-
-  createEffect(() => {
-    activeMessages().length;
-    scrollDiv.scrollTop = scrollDiv.scrollHeight - scrollDiv.clientHeight;
-  });
 
   return (
     <>

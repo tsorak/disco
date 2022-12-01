@@ -13,7 +13,9 @@ API
 
     ☐ Add Authorization (JWT --> validate.ts)
 
-    ✔ Recieve and broadcast messages @started(22-11-29 14:01) @done(22-11-29 15:58) @lasted(1h57m59s)
+    socket
+        ✔ Recieve and broadcast messages @started(22-11-29 14:01) @done(22-11-29 15:58) @lasted(1h57m59s)
+        ✔ onopen verify token @done(22-12-01 12:53)
 
 App
     index.tsx
@@ -22,7 +24,8 @@ App
         ✔ fix message text inline overflow @done(22-11-30 11:42)
 
         socket
-            ☐ try to reconnect socket if connection has been lost every n seconds
-            ☐ Ping only if state is CONNECTED
+            ✔ try to reconnect socket if connection has been lost every n seconds @done(22-12-01 13:16)
+            ✔ Ping only if state is CONNECTED @started(22-12-01 10:45) @done(22-12-01 11:08) @lasted(23m9s)
+            ☐ Do not attempt to reconnect if CloseEvent.reason === 'Invalid token'
         
         ✔ use lucide icons @done(22-12-01 09:53)
