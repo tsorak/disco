@@ -26,6 +26,6 @@ App
         socket
             ✔ try to reconnect socket if connection has been lost every n seconds @done(22-12-01 13:16)
             ✔ Ping only if state is CONNECTED @started(22-12-01 10:45) @done(22-12-01 11:08) @lasted(23m9s)
-            ☐ Do not attempt to reconnect if CloseEvent.reason === 'Invalid token'
+            ✔ Do not attempt to reconnect if CloseEvent.reason === 'Invalid token' @done(22-12-02 18:16)
         
         ✔ use lucide icons @done(22-12-01 09:53)
