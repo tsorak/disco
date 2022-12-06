@@ -6,6 +6,7 @@ import { Component, onMount, createSignal, createEffect, onCleanup } from "solid
 import { isServer } from "solid-js/web";
 import Message from "../components/Message";
 import ChannelTitle from "../components/ChannelTitle";
+import { clientSocket } from "~/communication/websocket";
 
 const App: Component = () => {
   const [lastCloseMsg, setLastCloseMsg] = createSignal<{ reason: string; timeStamp: number }>({ reason: "", timeStamp: 0 });
@@ -24,104 +25,129 @@ const App: Component = () => {
   let scrollDiv: HTMLDivElement | undefined;
 
   let ping;
-  let websocket: WebSocket | undefined;
+  // let websocket: WebSocket | undefined;
 
-  function sendWebSocketMessage(type, data) {
-    websocket.send(JSON.stringify({ type, data }));
-  }
+  // function sendWebSocketMessage(type, data) {
+  //   websocket.send(JSON.stringify({ type, data }));
+  // }
 
-  function initClientSocket(url: string): WebSocket {
-    const socket = new WebSocket(url);
+  // function initClientSocket(url: string): WebSocket {
+  //   const socket = new WebSocket(url);
 
-    socket.addEventListener("open", (event) => {
-      // websocket.send({ type: "login", data: { msg, token: cookie().discoToken, target: "@me/åtister", sender: loggedInUser.uuid } }) ??????????????
-      console.log("Socket Opened", event);
-      sendWebSocketMessage("connect", { token: cookie().discoToken });
-    });
+  //   socket.addEventListener("open", (event) => {
+  //     // websocket.send({ type: "login", data: { msg, token: cookie().discoToken, target: "@me/åtister", sender: loggedInUser.uuid } }) ??????????????
+  //     console.log("Socket Opened", event);
+  //     sendWebSocketMessage("connect", { token: cookie().discoToken });
+  //   });
 
-    socket.addEventListener("message", (event) => {
-      try {
-        JSON.parse(event.data);
-      } catch (e) {
-        return;
-      }
-      const message = JSON.parse(event.data);
+  //   socket.addEventListener("message", (event) => {
+  //     try {
+  //       JSON.parse(event.data);
+  //     } catch (e) {
+  //       return;
+  //     }
+  //     const message = JSON.parse(event.data);
 
-      if (message.type != "pong") console.log(message.data);
+  //     if (message.type != "pong") console.log(message.data);
 
-      switch (message.type) {
-        case "connect":
-          setSocketConnected(true);
-          break;
-        case "pong":
-          setLastPing(Number(message.data.time) - ping);
-          break;
-        case "chat":
-          setActiveMessages([...activeMessages(), message.data]);
-        default:
-          break;
-      }
-    });
+  //     switch (message.type) {
+  //       case "connect":
+  //         setSocketConnected(true);
+  //         break;
+  //       case "pong":
+  //         setLastPing(Number(message.data.time) - ping);
+  //         break;
+  //       case "chat":
+  //         setActiveMessages([...activeMessages(), message.data]);
+  //         break;
+  //       default:
+  //         break;
+  //     }
+  //   });
 
-    socket.addEventListener("close", (event) => {
-      console.log("Socket Closed", event);
-      const { reason } = event;
-      const timeStamp = Math.round(event.timeStamp);
+  //   socket.addEventListener("close", (event) => {
+  //     console.log("Socket Closed", event);
+  //     const { reason } = event;
+  //     const timeStamp = Math.round(event.timeStamp);
 
-      setLastCloseMsg({ reason, timeStamp });
-      setSocketConnected(false);
-    });
+  //     setLastCloseMsg({ reason, timeStamp });
+  //     setSocketConnected(false);
+  //   });
 
-    socket.addEventListener("error", (event) => {
-      console.log("Socket Errored :>> ", event);
-    });
+  //   socket.addEventListener("error", (event) => {
+  //     console.log("Socket Errored :>> ", event);
+  //   });
 
-    return socket;
-  }
+  //   return socket;
+  // }
 
+  // onMount(() => {
+  //   websocket = initClientSocket(`${location.origin.replace("http", "ws").replace("3000", "8080")}`);
+  //   console.log(websocket);
+
+  //   //closeReason
+  //   createEffect(() => {
+  //     lastCloseMsg();
+  //     console.log("Close reason:", lastCloseMsg());
+  //   });
+
+  //   //Reconnect
+  //   createEffect(() => {
+  //     // if (socketConnected() || lastCloseMsg().reason === "Invalid token") return;
+  //     if (socketConnected() || lastCloseMsg().reason === "Invalid token") return;
+
+  //     let interval = setInterval(() => {
+  //       console.log("Attempting to reconnect...");
+
+  //       try {
+  //         websocket = initClientSocket(`${location.origin.replace("http", "ws").replace("3000", "8080")}`);
+  //       } catch (e) {}
+  //     }, 5000);
+
+  //     onCleanup(() => {
+  //       clearInterval(interval);
+  //     });
+  //   });
+
+  //   // client ping <-> server pong
+  //   createEffect(() => {
+  //     if (!socketConnected()) return;
+
+  //     let interval = setInterval(() => {
+  //       try {
+  //         const id = crypto.randomUUID();
+  //         sendWebSocketMessage("ping", { id, lastMS: lastPing() });
+  //         ping = Date.now();
+  //       } catch (e) {}
+  //     }, 1000);
+
+  //     onCleanup(() => {
+  //       clearInterval(interval);
+  //     });
+  //   });
+
+  //   //Autoscroll
+  //   createEffect(() => {
+  //     activeMessages().length;
+  //     scrollDiv.scrollTop = scrollDiv.scrollHeight - scrollDiv.clientHeight;
+  //   });
+
+  //   onCleanup(() => {
+  //     websocket.close();
+  //   });
+  // });
+  let msgElem;
+  const websocket = clientSocket;
   onMount(() => {
-    websocket = initClientSocket(`${location.origin.replace("http", "ws").replace("3000", "8080")}`);
-    console.log(websocket);
+    websocket.init(`${location.origin.replace("http", "ws").replace("3000", "8080")}`, cookie().discoToken);
 
-    //closeReason
-    createEffect(() => {
-      lastCloseMsg();
-      console.log("Close reason:", lastCloseMsg());
+    websocket.on("chat", (data) => {
+      console.log("Incoming msg:", data);
+      setActiveMessages([...activeMessages(), data]);
     });
 
-    //Reconnect
     createEffect(() => {
-      // if (socketConnected() || lastCloseMsg().reason === "Invalid token") return;
-      if (socketConnected() || lastCloseMsg().reason === "Invalid token") return;
-
-      let interval = setInterval(() => {
-        console.log("Attempting to reconnect...");
-
-        try {
-          websocket = initClientSocket(`${location.origin.replace("http", "ws").replace("3000", "8080")}`);
-        } catch (e) {}
-      }, 5000);
-
-      onCleanup(() => {
-        clearInterval(interval);
-      });
-    });
-
-    // client ping <-> server pong
-    createEffect(() => {
-      if (!socketConnected()) return;
-
-      let interval = setInterval(() => {
-        try {
-          const id = crypto.randomUUID();
-          sendWebSocketMessage("ping", { id, lastMS: lastPing() });
-          ping = Date.now();
-        } catch (e) {}
-      }, 1000);
-
-      onCleanup(() => {
-        clearInterval(interval);
-      });
+      console.log(websocket.phase.get());
     });
 
     //Autoscroll
@@ -131,20 +157,22 @@ const App: Component = () => {
     });
 
     onCleanup(() => {
+      websocket.socket.close();
       websocket.close();
+      websocket.messageListeners.clear();
     });
   });
 
   const msgSubmit = (event: SubmitEvent) => {
     event.preventDefault();
-    const msg = event.target.msg.value || null;
+    const data = new FormData(event.target);
+
+    const msg = data.get("msg");
     if (!msg) return;
 
     console.log("MSG:", msg);
-
-    websocket.send(JSON.stringify({ type: "chat", data: { msg, target: "@me/åtister", sender: loggedInUser.uuid, token: cookie().discoToken } }));
-
-    event.target.msg.value = null;
+    websocket.emit("chat", { msg, target: "@me/åtister", sender: loggedInUser.uuid, token: cookie().discoToken });
+    msgElem.value = null;
   };
 
   return (
@@ -169,12 +197,10 @@ const App: Component = () => {
             </nav>
             <section class="panels">
               <div class="connectionInfo select-none text-white">
-                {socketConnected() && (
-                  <h1 class="px-1 bg-green-700">
-                    Connected <span>{lastPing()}ms</span>
-                  </h1>
-                )}
-                {!socketConnected() && <h1 class="px-1 bg-red-800">Disconnected</h1>}
+                {["CONNECTING", "RECONNECTING"].includes(websocket.phase.get()) && <h1 class="px-1 bg-yellow-600">{websocket.phase.get() === "CONNECTING" ? "Connecting" : "Reconnecting"}...</h1>}
+                {websocket.phase.get() === "AUTHORISING" && <h1 class="px-1 bg-blue-600">Authorising...</h1>}
+                {websocket.phase.get() === "CLOSED" && <h1 class="px-1 bg-red-700">Disconnected</h1>}
+                {websocket.phase.get() === "CONNECTED" && <h1 class="px-1 bg-green-700">Connected</h1>}
               </div>
               <div class="profile h-[52px] dark:bg-dc-profile-bg-dark"></div>
             </section>
@@ -232,7 +258,7 @@ const App: Component = () => {
                     </button>
                   </div>
                   <div class="flex-grow flex">
-                    <input class="bg-transparent text-dc-primary-text-dark focus:outline-none w-full min-w-[1rem]" type="text" name="msg" id="msg" autocomplete="off" spellcheck={false} />
+                    <input class="bg-transparent text-dc-primary-text-dark focus:outline-none w-full min-w-[1rem]" type="text" name="msg" id="msg" autocomplete="off" spellcheck={false} ref={msgElem} />
                   </div>
                   <div class="flex items-center gap-3 text-lg px-3">
                     <button class="grayEmoji">
