@@ -32,6 +32,10 @@ const App: Component = () => {
       setActiveMessages([...activeMessages(), data]);
     });
 
+    createEffect(() => {
+      console.log(websocket.phase.get());
+    });
+
     //ms
     createEffect(() => {
       console.log(websocket.ms.get());
@@ -83,7 +87,7 @@ const App: Component = () => {
               </div>
             </nav>
             <section class="panels">
-              <ConnectionInfo connectionState={websocket.phase.get} ms={websocket.ms.get} reconnect={websocket.connect.bind(websocket)} />
+              <ConnectionInfo connectionState={websocket.phase.get} ms={websocket.ms.get} reconnect={websocket.connect.bind(websocket)} closeReason={websocket.closeReason.get} />
               <div class="profile h-[52px] dark:bg-dc-profile-bg-dark"></div>
             </section>
           </div>

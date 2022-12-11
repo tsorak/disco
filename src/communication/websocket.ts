@@ -1,6 +1,7 @@
 import { buildSignal } from "~/utils/signals";
 import { setupClientHandlers } from "./websocketHandlers";
 import { pinger } from "./pinger";
+import { createEffect } from "solid-js";
 
 // ["CONNECTING", "CONNECTED", "CLOSING", "CLOSED", "ERROR", "RECONNECTING", "AUTHORISING"];
 
@@ -9,6 +10,7 @@ const clientSocket = {
   token: "",
   phase: buildSignal("CLOSED"),
   ms: buildSignal(-1, { equals: false }),
+  closeReason: buildSignal({ code: -1, reason: "" }),
   messageListeners: new Map<string, Array<Function>>(),
 
   init(url: string, token?: string) {
@@ -19,10 +21,17 @@ const clientSocket = {
 
     this.connect(url, token);
 
-    pinger.init({ connectionState: this.phase.get, emit: this.emit.bind(this), on: this.on.bind(this), ms: this.ms });
+    createEffect(() => {
+      if (this.phase.get() === "CONNECTED") {
+        pinger.start(this.emit.bind(this), this.ms, this.on.bind(this));
+      } else if (this.phase.get() === "CLOSED") {
+        pinger.stop();
+      }
+    });
   },
 
   connect(url?: string, token?: string) {
+    this.reset();
     this.phase.set("CONNECTING");
 
     token = token ? token : this.token;
@@ -35,7 +44,7 @@ const clientSocket = {
       messageListeners: this.messageListeners,
       emit: this.emit.bind(this),
       setPhase: this.phase.set,
-      reconnect: this.connect.bind(this),
+      setCloseReason: this.closeReason.set,
     });
 
     this.on("connect", () => {
@@ -43,11 +52,15 @@ const clientSocket = {
     });
   },
 
-  on(messageType: string, listener: Function) {
+  on(messageType: string, listener: Function, overwrite: boolean = true) {
     const eventFunctions = this.messageListeners.get(messageType);
     if (!eventFunctions) return this.messageListeners.set(messageType, [listener]);
 
-    eventFunctions.push(listener);
+    if (overwrite) {
+      this.messageListeners.set(messageType, [listener]);
+    } else {
+      eventFunctions.push(listener);
+    }
     return eventFunctions;
   },
 
@@ -60,11 +73,16 @@ const clientSocket = {
     this.socket.send(JSON.stringify({ type, data }));
   },
 
-  close() {
-    this.socket.close();
-    this.messageListeners.clear();
+  reset() {
+    // this.messageListeners.clear();
     pinger.stop();
     this.ms.set(-1);
+    this.closeReason.set({ code: -1, reason: "" });
+  },
+
+  close() {
+    this.socket.close();
+    this.reset();
   },
 };
 export { clientSocket };

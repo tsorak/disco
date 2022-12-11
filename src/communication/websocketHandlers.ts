@@ -21,15 +21,12 @@ const client = {
       listener(message.data);
     });
   },
-  close: (e: CloseEvent, options: { setPhase: Function; reconnect }) => {
-    const { setPhase, reconnect } = options;
-    const { reason } = e;
+  close: (e: CloseEvent, options: { setPhase: Function; setCloseReason: Function }) => {
+    const { setPhase, setCloseReason } = options;
+    const { reason, code } = e;
     console.log("Socket Closed", e);
     setPhase("CLOSED");
-    // reconnect();
-    // setTimeout(() => {
-    //   setPhase("RECONNECTING");
-    // }, 100);
+    setCloseReason({ code, reason });
   },
   error: (e: Event, options: { setPhase: Function }) => {
     const { setPhase } = options;
@@ -38,12 +35,12 @@ const client = {
   },
 };
 
-const setupClientHandlers = (socket: WebSocket, options?: { token?: string; emit?: Function; setPhase: Function; messageListeners?: Map<string, Function[]>; reconnect }): void => {
-  const { token, messageListeners, emit, setPhase, reconnect } = options;
+const setupClientHandlers = (socket: WebSocket, options?: { token?: string; emit?: Function; setPhase: Function; messageListeners?: Map<string, Function[]>; setCloseReason: Function }): void => {
+  const { token, messageListeners, emit, setPhase, setCloseReason } = options;
 
   socket.addEventListener("open", (e) => client.open(e, { emit, token, setPhase }));
   socket.addEventListener("message", (e) => client.message(e, { messageListeners, setPhase }));
-  socket.addEventListener("close", (e) => client.close(e, { setPhase, reconnect }));
+  socket.addEventListener("close", (e) => client.close(e, { setPhase, setCloseReason }));
   socket.addEventListener("error", (e) => client.error(e, { setPhase }));
 };
 
