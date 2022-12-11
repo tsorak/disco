@@ -1,7 +1,6 @@
 import { buildSignal } from "~/utils/signals";
 import { setupClientHandlers } from "./websocketHandlers";
 import { pinger } from "./pinger";
-import { mergeSearchString } from "@solidjs/router/dist/utils";
 
 // ["CONNECTING", "CONNECTED", "CLOSING", "CLOSED", "ERROR", "RECONNECTING", "AUTHORISING"];
 
@@ -18,13 +17,14 @@ const clientSocket = {
     this.url = url;
     this.token = token;
 
-    this.phase.set("CONNECTING");
     this.connect(url, token);
 
-    pinger.init({ connectedState: this.phase.get, emit: this.emit.bind(this), on: this.on.bind(this), ms: this.ms });
+    pinger.init({ connectionState: this.phase.get, emit: this.emit.bind(this), on: this.on.bind(this), ms: this.ms });
   },
 
   connect(url?: string, token?: string) {
+    this.phase.set("CONNECTING");
+
     token = token ? token : this.token;
     url = url ? url : this.url;
 

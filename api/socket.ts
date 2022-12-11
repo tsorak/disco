@@ -41,10 +41,12 @@ function handleReq(req: Request): Response {
 
   const { socket, response } = Deno.upgradeWebSocket(req);
   socket.onopen = (e) => {
+    //TODO: If no auth message is recieved from socket in x amount of seconds, kill it.
     // console.log(e);
     socket.id = crypto.randomUUID(); //TODO: add to users active sessions?
     connectedSockets.set(socket.id, socket);
     console.log(`Socket Opened %c${socket.id}`, "color:#0f0");
+    console.log(socket);
   };
   socket.onmessage = (e: MessageEvent) => {
     try {

@@ -4,13 +4,13 @@ const pinger = {
   intervalId: -1,
   timeSent: -1,
 
-  init(options: { connectedState: Accessor<string>; emit: Function; on: Function; ms: { get: Accessor<number>; set: Setter<number> } }) {
-    const { connectedState, emit, on, ms } = options;
+  init(options: { connectionState: Accessor<string>; emit: Function; on: Function; ms: { get: Accessor<number>; set: Setter<number> } }) {
+    const { connectionState, emit, on, ms } = options;
 
     createEffect(() => {
-      if (connectedState() === "CONNECTED") {
+      if (connectionState() === "CONNECTED") {
         this.start(emit, ms.get);
-      } else if (connectedState() === "CLOSED") {
+      } else if (connectionState() === "CLOSED") {
         this.stop();
       }
     });

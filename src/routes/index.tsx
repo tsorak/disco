@@ -4,9 +4,11 @@ import { json, parseCookie, useServerContext } from "solid-start";
 
 import { Component, onMount, createSignal, createEffect, onCleanup } from "solid-js";
 import { isServer } from "solid-js/web";
-import Message from "../components/Message";
-import ChannelTitle from "../components/ChannelTitle";
 import { clientSocket } from "~/communication/websocket";
+
+import Message from "~/components/Message";
+import ChannelTitle from "~/components/ChannelTitle";
+import ConnectionInfo from "~/components/ConnectionInfo";
 
 const App: Component = () => {
   const [activeMessages, setActiveMessages] = createSignal([]);
@@ -81,12 +83,7 @@ const App: Component = () => {
               </div>
             </nav>
             <section class="panels">
-              <div class="connectionInfo select-none text-white">
-                {["CONNECTING", "RECONNECTING"].includes(websocket.phase.get()) && <h1 class="px-1 bg-yellow-600">{websocket.phase.get() === "CONNECTING" ? "Connecting" : "Reconnecting"}...</h1>}
-                {websocket.phase.get() === "AUTHORISING" && <h1 class="px-1 bg-blue-600">Authorising...</h1>}
-                {websocket.phase.get() === "CLOSED" && <h1 class="px-1 bg-red-700">Disconnected</h1>}
-                {websocket.phase.get() === "CONNECTED" && <h1 class="px-1 bg-green-700">Connected</h1>}
-              </div>
+              <ConnectionInfo connectionState={websocket.phase.get} ms={websocket.ms.get} reconnect={websocket.connect.bind(websocket)} />
               <div class="profile h-[52px] dark:bg-dc-profile-bg-dark"></div>
             </section>
           </div>
