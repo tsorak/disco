@@ -9,10 +9,8 @@ import ChannelTitle from "../components/ChannelTitle";
 import { clientSocket } from "~/communication/websocket";
 
 const App: Component = () => {
-  const [lastCloseMsg, setLastCloseMsg] = createSignal<{ reason: string; timeStamp: number }>({ reason: "", timeStamp: 0 });
   const [lastPing, setLastPing] = createSignal<string | number>("-");
   const [activeMessages, setActiveMessages] = createSignal([]);
-  const [socketConnected, setSocketConnected] = createSignal(false);
 
   const serverContext = useServerContext();
   const cookie = () => parseCookie(isServer ? serverContext.request.headers.get("cookie") ?? "" : document.cookie);
@@ -23,120 +21,7 @@ const App: Component = () => {
   };
 
   let scrollDiv: HTMLDivElement | undefined;
-
-  let ping;
-  // let websocket: WebSocket | undefined;
-
-  // function sendWebSocketMessage(type, data) {
-  //   websocket.send(JSON.stringify({ type, data }));
-  // }
-
-  // function initClientSocket(url: string): WebSocket {
-  //   const socket = new WebSocket(url);
-
-  //   socket.addEventListener("open", (event) => {
-  //     // websocket.send({ type: "login", data: { msg, token: cookie().discoToken, target: "@me/åtister", sender: loggedInUser.uuid } }) ??????????????
-  //     console.log("Socket Opened", event);
-  //     sendWebSocketMessage("connect", { token: cookie().discoToken });
-  //   });
-
-  //   socket.addEventListener("message", (event) => {
-  //     try {
-  //       JSON.parse(event.data);
-  //     } catch (e) {
-  //       return;
-  //     }
-  //     const message = JSON.parse(event.data);
-
-  //     if (message.type != "pong") console.log(message.data);
-
-  //     switch (message.type) {
-  //       case "connect":
-  //         setSocketConnected(true);
-  //         break;
-  //       case "pong":
-  //         setLastPing(Number(message.data.time) - ping);
-  //         break;
-  //       case "chat":
-  //         setActiveMessages([...activeMessages(), message.data]);
-  //         break;
-  //       default:
-  //         break;
-  //     }
-  //   });
-
-  //   socket.addEventListener("close", (event) => {
-  //     console.log("Socket Closed", event);
-  //     const { reason } = event;
-  //     const timeStamp = Math.round(event.timeStamp);
-
-  //     setLastCloseMsg({ reason, timeStamp });
-  //     setSocketConnected(false);
-  //   });
-
-  //   socket.addEventListener("error", (event) => {
-  //     console.log("Socket Errored :>> ", event);
-  //   });
-
-  //   return socket;
-  // }
-
-  // onMount(() => {
-  //   websocket = initClientSocket(`${location.origin.replace("http", "ws").replace("3000", "8080")}`);
-  //   console.log(websocket);
-
-  //   //closeReason
-  //   createEffect(() => {
-  //     lastCloseMsg();
-  //     console.log("Close reason:", lastCloseMsg());
-  //   });
-
-  //   //Reconnect
-  //   createEffect(() => {
-  //     // if (socketConnected() || lastCloseMsg().reason === "Invalid token") return;
-  //     if (socketConnected() || lastCloseMsg().reason === "Invalid token") return;
-
-  //     let interval = setInterval(() => {
-  //       console.log("Attempting to reconnect...");
-
-  //       try {
-  //         websocket = initClientSocket(`${location.origin.replace("http", "ws").replace("3000", "8080")}`);
-  //       } catch (e) {}
-  //     }, 5000);
-
-  //     onCleanup(() => {
-  //       clearInterval(interval);
-  //     });
-  //   });
-
-  //   // client ping <-> server pong
-  //   createEffect(() => {
-  //     if (!socketConnected()) return;
-
-  //     let interval = setInterval(() => {
-  //       try {
-  //         const id = crypto.randomUUID();
-  //         sendWebSocketMessage("ping", { id, lastMS: lastPing() });
-  //         ping = Date.now();
-  //       } catch (e) {}
-  //     }, 1000);
-
-  //     onCleanup(() => {
-  //       clearInterval(interval);
-  //     });
-  //   });
-
-  //   //Autoscroll
-  //   createEffect(() => {
-  //     activeMessages().length;
-  //     scrollDiv.scrollTop = scrollDiv.scrollHeight - scrollDiv.clientHeight;
-  //   });
-
-  //   onCleanup(() => {
-  //     websocket.close();
-  //   });
-  // });
-  let msgElem;
+  let msgElem: HTMLInputElement;
   const websocket = clientSocket;
   onMount(() => {
     websocket.init(`${location.origin.replace("http", "ws").replace("3000", "8080")}`, cookie().discoToken);
@@ -165,6 +50,8 @@ const App: Component = () => {
 
   const msgSubmit = (event: SubmitEvent) => {
     event.preventDefault();
+    if (websocket.phase.get() !== "CONNECTED") return;
+
     const data = new FormData(event.target);
 
     const msg = data.get("msg");
