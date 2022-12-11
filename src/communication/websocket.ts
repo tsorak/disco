@@ -1,13 +1,15 @@
-import { onCleanup } from "solid-js";
-import { objectSignal } from "~/utils/signals";
+import { buildSignal } from "~/utils/signals";
 import { setupClientHandlers } from "./websocketHandlers";
+import { pinger } from "./pinger";
+import { mergeSearchString } from "@solidjs/router/dist/utils";
 
 // ["CONNECTING", "CONNECTED", "CLOSING", "CLOSED", "ERROR", "RECONNECTING", "AUTHORISING"];
 
 const clientSocket = {
   socket: undefined,
   token: "",
-  phase: objectSignal("CLOSED"),
+  phase: buildSignal("CLOSED"),
+  ms: buildSignal(-1, { equals: false }),
   messageListeners: new Map<string, Array<Function>>(),
 
   init(url: string, token?: string) {
@@ -18,6 +20,8 @@ const clientSocket = {
 
     this.phase.set("CONNECTING");
     this.connect(url, token);
+
+    pinger.init({ connectedState: this.phase.get, emit: this.emit.bind(this), on: this.on.bind(this), ms: this.ms });
   },
 
   connect(url?: string, token?: string) {
@@ -29,9 +33,9 @@ const clientSocket = {
     setupClientHandlers(this.socket, {
       token,
       messageListeners: this.messageListeners,
-      emit: this.emit.bind(clientSocket),
+      emit: this.emit.bind(this),
       setPhase: this.phase.set,
-      reconnect: this.connect.bind(clientSocket),
+      reconnect: this.connect.bind(this),
     });
 
     this.on("connect", () => {
@@ -48,7 +52,9 @@ const clientSocket = {
   },
 
   emit(type: string, data: Record<string, any>) {
-    console.log("Emitting:", { type, data });
+    if (type !== "ping") {
+      console.log("Emitting:", { type, data });
+    }
 
     JSON.stringify({ type, data });
     this.socket.send(JSON.stringify({ type, data }));
@@ -56,9 +62,9 @@ const clientSocket = {
 
   close() {
     this.socket.close();
+    this.messageListeners.clear();
+    pinger.stop();
+    this.ms.set(-1);
   },
 };
-onCleanup(() => {
-  clientSocket.close();
-});
 export { clientSocket };

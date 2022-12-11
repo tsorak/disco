@@ -9,7 +9,6 @@ import ChannelTitle from "../components/ChannelTitle";
 import { clientSocket } from "~/communication/websocket";
 
 const App: Component = () => {
-  const [lastPing, setLastPing] = createSignal<string | number>("-");
   const [activeMessages, setActiveMessages] = createSignal([]);
 
   const serverContext = useServerContext();
@@ -31,8 +30,9 @@ const App: Component = () => {
       setActiveMessages([...activeMessages(), data]);
     });
 
+    //ms
     createEffect(() => {
-      console.log(websocket.phase.get());
+      console.log(websocket.ms.get());
     });
 
     //Autoscroll
@@ -42,9 +42,7 @@ const App: Component = () => {
     });
 
     onCleanup(() => {
-      websocket.socket.close();
       websocket.close();
-      websocket.messageListeners.clear();
     });
   });
 
@@ -77,7 +75,7 @@ const App: Component = () => {
               <div class="overflow-y-auto">
                 <ul>
                   <li class="m-2 p-3 bg-[#ffffff09] hover:bg-[#fff1] rounded">
-                    <h1>xDD</h1>
+                    <h1>Foo</h1>
                   </li>
                 </ul>
               </div>
