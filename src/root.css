@@ -27,6 +27,13 @@
     transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
     transition-duration: 150ms;
   }
+
+  .channel-selected {
+    @apply dark:bg-[#4f545c99] !important;
+  }
+  .channel-collection-selected {
+    background: linear-gradient(#3141db, #99e3f9, #e844fb);
+  }
 }
 
 body {

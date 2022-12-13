@@ -1,11 +1,12 @@
-import { PlusCircle, Gift, Sticker, Smile, HelpCircle, Inbox, Users, UserPlus, Pin, Video, PhoneCall, User, Phone } from "lucide-solid";
+import { PlusCircle, Gift, Sticker, Smile, HelpCircle, Inbox, Users, UserPlus, Pin, Video, PhoneCall, User, Phone, Home } from "lucide-solid";
 
 import { json, parseCookie, useServerContext } from "solid-start";
 
 import { Component, onMount, createSignal, createEffect, onCleanup } from "solid-js";
 import { isServer } from "solid-js/web";
-import { clientSocket } from "~/communication/websocket";
+import { A } from "@solidjs/router";
 
+import { clientSocket } from "~/communication/websocket";
 import Message from "~/components/Message";
 import ChannelTitle from "~/components/ChannelTitle";
 import ConnectionInfo from "~/components/ConnectionInfo";
@@ -13,8 +14,7 @@ import ConnectionInfo from "~/components/ConnectionInfo";
 const App: Component = () => {
   const [activeMessages, setActiveMessages] = createSignal([]);
 
-  const serverContext = useServerContext();
-  const cookie = () => parseCookie(isServer ? serverContext.request.headers.get("cookie") ?? "" : document.cookie);
+  const cookie = () => parseCookie(isServer ? useServerContext().request.headers.get("cookie") ?? "" : document.cookie);
 
   const loggedInUser = {
     username: "karots",
@@ -69,7 +69,14 @@ const App: Component = () => {
   return (
     <>
       <div class="flex h-screen dark:bg-dc-serverbar-bg-dark text-dc-sidebar-text-dark">
-        <nav class="w-[72px] flex-none"></nav>
+        <nav class="w-[72px] flex-none flex flex-col gap-2 py-2">
+          <A href="/@me" class="mx-3 rounded-full w-12 h-12 flex items-center p-0.5 relative z-10 overflow-hidden bg-dc-foreground-bg-dark text-white" activeClass="channel-collection-selected">
+            <div class="p-2 flex-grow bg-dc-foreground-bg-dark rounded-full h-full">
+              <Home class="w-full h-full" />
+            </div>
+          </A>
+          <div class="splitter h-0.5 mx-5 bg-dc-foreground-bg-dark"></div>
+        </nav>
         <div class="flex-grow bg-dc-sidebar-bg-dark flex">
           <div class="sidebar w-60 flex flex-col flex-none">
             <nav class="privateChannels flex flex-col flex-grow h-0">
@@ -78,16 +85,28 @@ const App: Component = () => {
                   Find or start a conversation
                 </button>
               </div>
-              <div class="overflow-y-auto">
-                <ul>
-                  <li class="m-2 p-3 bg-[#ffffff09] hover:bg-[#fff1] rounded">
-                    <h1>Foo</h1>
+              <div class="overflow-y-auto flex-grow">
+                <ul class="flex flex-col justify-center gap-2 py-2">
+                  {/* <li class="mx-2 flex rounded overflow-hidden h-[44px]">
+                    <A href="/" class="p-2 flex-grow dark:hover:bg-[rgba(79,84,92,0.4)] flex items-center" activeClass="channel-selected">
+                      Home
+                    </A>
+                  </li> */}
+                  <li class="mx-2 flex rounded overflow-hidden h-[44px]">
+                    <A href="/@me/foo" class="p-2 flex-grow dark:hover:bg-[rgba(79,84,92,0.4)] flex items-center" activeClass="channel-selected">
+                      Foo
+                    </A>
+                  </li>
+                  <li class="mx-2 flex rounded overflow-hidden h-[44px]">
+                    <A href="/@me/bar" class="p-2 flex-grow dark:hover:bg-[rgba(79,84,92,0.4)] flex items-center" activeClass="channel-selected">
+                      Bar
+                    </A>
                   </li>
                 </ul>
               </div>
             </nav>
             <section class="panels">
-              <ConnectionInfo connectionState={websocket.phase.get} ms={websocket.ms.get} reconnect={websocket.connect.bind(websocket)} closeReason={websocket.closeReason.get} />
+              <ConnectionInfo connectionState={websocket.phase.get} ms={websocket.ms.get} reconnect={() => websocket.connect.bind(websocket)("", cookie().discoToken)} closeReason={websocket.closeReason.get} />
               <div class="profile h-[52px] dark:bg-dc-profile-bg-dark"></div>
             </section>
           </div>
