@@ -1,8 +1,9 @@
 // @refresh reload
 import { Suspense } from "solid-js";
-import { A, Body, ErrorBoundary, FileRoutes, Head, Html, Meta, Routes, Route, Scripts, Title } from "solid-start";
+import { A, Body, ErrorBoundary, FileRoutes, Head, Html, Meta, Routes, Route, Scripts, Title, Navigate } from "solid-start";
 import "./root.css";
-import index from "./routes/index";
+import Index from "./routes/index";
+import Error from "./routes/[...404]";
 
 export default function Root() {
   return (
@@ -16,9 +17,14 @@ export default function Root() {
         <Suspense>
           <ErrorBoundary>
             <Routes>
-              <Route path="/" component={index} />
-              <Route path="/:channelCollection" component={index} />
-              <Route path="/:channelCollection/:channel" component={index} />
+              <Route path="/" component={() => <Navigate href="/app" />} />
+              <Route path="/login" component={() => <h1>Login page</h1>} />
+              <Route path="/register" component={() => <h1>Signup page</h1>} />
+
+              <Route path="/app/" component={() => <Navigate href="@me" />} />
+              <Route path="/app/*" component={Index} />
+
+              <Route path="/*404" component={Error} />
             </Routes>
           </ErrorBoundary>
         </Suspense>

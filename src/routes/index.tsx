@@ -4,12 +4,13 @@ import { json, parseCookie, useServerContext } from "solid-start";
 
 import { Component, onMount, createSignal, createEffect, onCleanup } from "solid-js";
 import { isServer } from "solid-js/web";
-import { A } from "@solidjs/router";
+import { A, useLocation } from "@solidjs/router";
 
 import { clientSocket } from "~/communication/websocket";
 import Message from "~/components/Message";
 import ChannelTitle from "~/components/ChannelTitle";
 import ConnectionInfo from "~/components/ConnectionInfo";
+import server$ from "solid-start/server";
 
 const App: Component = () => {
   const [activeMessages, setActiveMessages] = createSignal([]);
@@ -20,6 +21,8 @@ const App: Component = () => {
     username: "karots",
     uuid: "uuid-for-profile",
   };
+
+  const getUserdata = () => Object.assign(loggedInUser, { token: cookie().discoToken });
 
   let scrollDiv: HTMLDivElement | undefined;
   let msgElem: HTMLInputElement;
@@ -32,14 +35,31 @@ const App: Component = () => {
       setActiveMessages([...activeMessages(), data]);
     });
 
+    //isRouting
+    createEffect(async () => {
+      const res = server$(async (path, user) => {
+        console.log(
+          `
+          Client is requesting the following channel: ${path} 
+          As: ${JSON.stringify(user)} 
+          `
+        );
+        return { path, data: [] };
+      });
+      const path = useLocation().pathname;
+      const data = await res(path, getUserdata());
+      console.log("%cGot the following channel data:", "color: #0f0", data);
+    });
+
+    //phase
     createEffect(() => {
-      console.log(websocket.phase.get());
+      console.log(`[%cPHASE%c] ${websocket.phase.get()}`, "color: #0cf", "color: initial");
     });
 
     //ms
-    createEffect(() => {
-      console.log(websocket.ms.get());
-    });
+    // createEffect(() => {
+    //   console.log(websocket.ms.get());
+    // });
 
     //Autoscroll
     createEffect(() => {
@@ -70,7 +90,7 @@ const App: Component = () => {
     <>
       <div class="flex h-screen dark:bg-dc-serverbar-bg-dark text-dc-sidebar-text-dark">
         <nav class="w-[72px] flex-none flex flex-col gap-2 py-2">
-          <A href="/@me" class="mx-3 rounded-full w-12 h-12 flex items-center p-0.5 relative z-10 overflow-hidden bg-dc-foreground-bg-dark text-white" activeClass="channel-collection-selected">
+          <A href="/app/@me" class="mx-3 rounded-full w-12 h-12 flex items-center p-0.5 relative z-10 overflow-hidden bg-dc-foreground-bg-dark text-white" activeClass="channel-collection-selected">
             <div class="p-2 flex-grow bg-dc-foreground-bg-dark rounded-full h-full">
               <Home class="w-full h-full" />
             </div>
@@ -93,12 +113,12 @@ const App: Component = () => {
                     </A>
                   </li> */}
                   <li class="mx-2 flex rounded overflow-hidden h-[44px]">
-                    <A href="/@me/foo" class="p-2 flex-grow dark:hover:bg-[rgba(79,84,92,0.4)] flex items-center" activeClass="channel-selected">
+                    <A href="/app/@me/foo" class="p-2 flex-grow dark:hover:bg-[rgba(79,84,92,0.4)] flex items-center" activeClass="channel-selected">
                       Foo
                     </A>
                   </li>
                   <li class="mx-2 flex rounded overflow-hidden h-[44px]">
-                    <A href="/@me/bar" class="p-2 flex-grow dark:hover:bg-[rgba(79,84,92,0.4)] flex items-center" activeClass="channel-selected">
+                    <A href="/app/@me/bar" class="p-2 flex-grow dark:hover:bg-[rgba(79,84,92,0.4)] flex items-center" activeClass="channel-selected">
                       Bar
                     </A>
                   </li>
