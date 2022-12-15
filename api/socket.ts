@@ -1,12 +1,5 @@
 import { isAuthorized } from "./validate.ts";
 
-async function handle(conn: Deno.Conn) {
-  const httpConn = Deno.serveHttp(conn);
-  for await (const requestEvent of httpConn) {
-    await requestEvent.respondWith(handleReq(requestEvent.request));
-  }
-}
-
 const connectedSockets: Map<string, WebSocket> = new Map();
 
 //TODO: sender: User, targets: channel.subscribers
@@ -18,7 +11,7 @@ function broadcastMessage(options: { sender: { name: string | undefined } | unde
   targets.forEach((target) => target.send(JSON.stringify({ type: "chat", data: { sender, msg } })));
 }
 
-function handleReq(req: Request): Response {
+export function handleUpgrade(req: Request): Response {
   //   const token: string | null =
   //     req.headers
   //       .get("cookie")
@@ -98,10 +91,4 @@ function handleReq(req: Request): Response {
     console.log(`Socket Closed %c${socket.id}`, "color:#f00");
   };
   return response;
-}
-
-const server = Deno.listen({ port: 8080 });
-
-for await (const conn of server) {
-  handle(conn);
 }

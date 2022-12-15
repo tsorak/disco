@@ -1,0 +1,21 @@
+
+###Socket
+
+GET http://localhost:8080/ HTTP/1.1
+  Connection: Upgrade
+  Upgrade: websocket
+  Sec-WebSocket-Key: 123
+
+###GET
+
+GET http://localhost:8080/@me/foo HTTP/1.1
+
+
+###POST
+
+POST http://localhost:8080/ HTTP/1.1
+
+{
+  "name": "foo",
+  "targets": ["uuid-0", "uuid-1"],
+}
