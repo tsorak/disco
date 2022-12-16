@@ -76,3 +76,13 @@ const message = {
     remove: () => {},
   },
 };
+
+const getChannelCollectionData = async (target, token) => {
+  return ["name", "subchannels"];
+};
+
+const getChannelData = async (target, token) => {
+  return ["name", "members", "messages"];
+};
+
+export { getChannelCollectionData, getChannelData };

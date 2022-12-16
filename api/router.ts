@@ -1,5 +1,8 @@
+import { getChannelCollectionData, getChannelData } from "./db.ts";
+
 export async function handleRequest(req: Request): Promise<Response> {
-  if (new URL(req.url).pathname === "/favicon.ico") return new Response(null, { status: 418 });
+  const path = new URL(req.url).pathname;
+  if (path === "/favicon.ico") return new Response(null, { status: 418 });
 
   const extractJson = async (req: Request) => {
     try {
@@ -18,7 +21,29 @@ export async function handleRequest(req: Request): Promise<Response> {
       .split(" ")
       .map((c) => c.split("=")) ?? []
   );
+  const token = cookies.discoToken;
 
+  const [channelCollection, channel] = path.split("/").slice(1);
+  console.log([channelCollection, channel]);
+
+  const responseData = {
+    channelCollection: undefined,
+    channel: undefined,
+  };
+
+  if (channel || channelCollection) {
+    switch (req.method) {
+      case "GET":
+        responseData.channelCollection = channelCollection && !channel ? await getChannelCollectionData(channelCollection, token) : {};
+        responseData.channel = channel ? await getChannelData(channel, token) : {};
+        break;
+      case "POST":
+        break;
+
+      default:
+        break;
+    }
+  }
   const responseBody = {
     request: {
       url: req.url,
@@ -26,6 +51,7 @@ export async function handleRequest(req: Request): Promise<Response> {
       body: json ?? "",
       cookies,
     },
+    responseData,
   };
   console.dir(responseBody);
 
