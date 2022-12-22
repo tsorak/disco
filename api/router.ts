@@ -1,4 +1,4 @@
-import { getChannelCollectionData, getChannelData } from "./db.ts";
+import { getChannelCollectionData, getChannelData, dbq } from "./db.ts";
 
 export async function handleRequest(req: Request): Promise<Response> {
   const path = new URL(req.url).pathname;
@@ -29,7 +29,10 @@ export async function handleRequest(req: Request): Promise<Response> {
   const responseData = {
     channelCollection: undefined,
     channel: undefined,
+    queryResult: undefined,
   };
+
+  let status = 200;
 
   if (channel || channelCollection) {
     switch (req.method) {
@@ -38,6 +41,15 @@ export async function handleRequest(req: Request): Promise<Response> {
         responseData.channel = channel ? await getChannelData(channel, token) : {};
         break;
       case "POST":
+        {
+          try {
+            responseData.queryResult = dbq(json.query);
+            status = 200;
+          } catch (err) {
+            responseData.queryResult = err;
+            status = 400;
+          }
+        }
         break;
 
       default:
@@ -58,5 +70,5 @@ export async function handleRequest(req: Request): Promise<Response> {
   const headers = new Map();
   headers.set("content-type", "application/json");
 
-  return new Response(JSON.stringify(responseBody), { status: 200, headers: Object.fromEntries(headers) });
+  return new Response(JSON.stringify(responseBody), { status, headers: Object.fromEntries(headers) });
 }
