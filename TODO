@@ -3,11 +3,14 @@
 
 API
     Database (db.ts)
-        ☐ Add SQL queries
-        ☐ Add database adapter/interface
-
-        Test
-            ☐ Put and get a JSON object
+        Add SQL queries
+          ✔ CREATE @done(22-12-28 14:13)
+          ✔ READ @done(22-12-28 14:13)
+          ☐ UPDATE
+          ☐ DELETE
+        ✔ Add database adapter/interface @done(22-12-28 14:13) (dbQuery)
+        
+        ☐ Add fromUser and relatedChannel checks to dbQuery.create
     
     ☐ Add Authentication
 
