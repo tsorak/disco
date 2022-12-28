@@ -1,4 +1,25 @@
 import { DB } from "https://deno.land/x/sqlite/mod.ts";
+interface DiscoRow {
+  uuid: string;
+}
+interface UserRow extends DiscoRow {
+  name: string;
+  password: string;
+  subscriptions: string;
+}
+interface ChannelRow extends DiscoRow {
+  name: string;
+  subscribers: string;
+}
+interface MessageRow extends DiscoRow {
+  fromUser: string;
+  relatedChannel: string;
+  content: string;
+  // FOREIGN KEY (fromUser) REFERENCES users(uuid)
+  // FOREIGN KEY (relatedChannel) REFERENCES channels(uuid)
+}
+
+// let db: DB;
 
 // Open a database
 // const db = new DB("test.db");
@@ -25,7 +46,10 @@ import { DB } from "https://deno.land/x/sqlite/mod.ts";
 // const users = new DB("users.db");
 // const channels = new DB("channels.db");
 
-const sqlErrorCatcher = (fn: Function, returnError = false): boolean | Error => {
+const sqlErrorCatcher = (
+  fn: Function,
+  returnError = false,
+): boolean | Error => {
   try {
     fn();
     return true;
@@ -36,43 +60,79 @@ const sqlErrorCatcher = (fn: Function, returnError = false): boolean | Error => 
   }
 };
 
-const dbQuery = () => {
+const dbQuery = (db: DB) => {
   function sendQuery(query: string) {
-    console.log(query);
+    console.log("SENT QUERY:", query);
     return db.queryEntries(query);
   }
 
   return {
     table(name: string) {
       return {
-        create: (data: Record<string, string>) => {
-          const values = Object.values(data).map((val) => {
-            return `'${val}'`;
-          });
+        create: (data: UserRow | ChannelRow | MessageRow) => {
+          type PossibleRowTypes = UserRow | ChannelRow | MessageRow;
 
-          if (name === "messages") {
-            return sendQuery(`INSERT INTO messages VALUES(
-              ${values[0]},
-              (SELECT uuid FROM users WHERE uuid=${values[1]} LIMIT 1),
-              (SELECT uuid FROM channels WHERE uuid=${values[2]} LIMIT 1),
-              ${values[3]}
-            )`);
+          function isUserRow(row: PossibleRowTypes): row is UserRow {
+            return ["uuid", "name", "password", "subscriptions"].map((
+              k,
+              _,
+              arr,
+            ) => k in row && Object.keys(row).length === arr.length).every((
+              k,
+            ) => k === true);
           }
 
-          const valuesString = values.join(", "); // "'val1', 'val2', 'val3', 'val4'"
+          function isChannelRow(row: PossibleRowTypes): row is ChannelRow {
+            return ["uuid", "name", "subscribers"].map((k, _, arr) =>
+              k in row && Object.keys(row).length === arr.length
+            ).every((k) => k === true);
+          }
 
-          return sendQuery(`INSERT INTO ${name} VALUES(${valuesString}) RETURNING *`);
+          function isMessageRow(row: PossibleRowTypes): row is MessageRow {
+            return ["uuid", "fromUser", "relatedChannel", "content"].map((
+              k,
+              _,
+              arr,
+            ) => k in row && Object.keys(row).length === arr.length).every((
+              k,
+            ) => k === true);
+          }
+
+          if (isUserRow(data) && name === "users") {
+            const userRow = data as UserRow;
+            return sendQuery(
+              `INSERT INTO ${name} VALUES('${userRow.uuid}','${userRow.name}','${userRow.password}','${userRow.subscriptions}') RETURNING *`,
+            );
+          } else if (isChannelRow(data) && name === "channels") {
+            const channelRow = data as ChannelRow;
+            return sendQuery(
+              `INSERT INTO ${name} VALUES('${channelRow.uuid}','${channelRow.name}','${channelRow.subscribers}') RETURNING *`,
+            );
+          } else if (isMessageRow(data) && name === "messages") {
+            const messageRow = data as MessageRow;
+            return sendQuery(
+              `INSERT INTO ${name} VALUES('${messageRow.uuid}',(SELECT uuid FROM users WHERE uuid=${messageRow.fromUser} LIMIT 1),(SELECT uuid FROM channels WHERE uuid=${messageRow.relatedChannel} LIMIT 1),'${messageRow.content}') RETURNING *`,
+            );
+          } else {
+            return undefined;
+          }
         },
-        read: (options: { column?: string; where?: { uuid?: string } | Record<string, string>; limit?: number }) => {
+        read: (
+          options: {
+            column?: string;
+            where?: { uuid?: string } | Record<string, string>;
+            limit?: number;
+          },
+        ) => {
           const column = options?.column || "*";
 
-          if (!options || !options.where) return sendQuery(`SELECT ${column} FROM ${name}`);
+          if (!options || !options.where) {
+            return sendQuery(`SELECT ${column} FROM ${name}`);
+          }
 
-          const firstCondition = Object.entries(options.where)[0];
-          firstCondition[1] = `'${firstCondition[1]}'`;
-          const condition = firstCondition.join("=");
-
-          const buildConditions = (conditions: Record<string, string>): string => {
+          const buildConditions = (
+            conditions: Record<string, string>,
+          ): string => {
             return Object.entries(conditions)
               .map(([key, value], i) => {
                 if (i === 0) {
@@ -83,11 +143,12 @@ const dbQuery = () => {
               .join(" ");
           };
 
-          return sendQuery(`SELECT ${column} FROM ${name}${buildConditions(options.where)}`);
+          return sendQuery(
+            `SELECT ${column} FROM ${name}${buildConditions(options.where)}`,
+          );
         },
         update: () => {},
         delete: () => {},
-
         // row(where: { uuid?: string } | Record<string, string>, options?: { limit?: number }) {
         //   options ? (options = options.limit ? ` LIMIT ${options.limit}` : undefined) : undefined;
 
@@ -108,14 +169,14 @@ const dbQuery = () => {
 const dropDB = async (path: string) => {
   try {
     await Deno.remove(`${path}`);
-  } catch (error) {
-    console.error(`${error}`);
+  } catch (_error) {
+    // console.error(`${error}`);
   }
 };
 
 const initDB = async (name = "database"): Promise<DB> => {
   await dropDB(`${name}.db`);
-  const db = new DB(`${name}.db`);
+  const database = new DB(`${name}.db`);
 
   // db.execute(`
   //   DROP TABLE IF EXISTS messages;
@@ -123,7 +184,7 @@ const initDB = async (name = "database"): Promise<DB> => {
   //   DROP TABLE IF EXISTS channels;
   // `);
 
-  db.execute(`
+  database.execute(`
     CREATE TABLE IF NOT EXISTS users (
       uuid TEXT PRIMARY KEY,
       name TEXT,
@@ -132,7 +193,7 @@ const initDB = async (name = "database"): Promise<DB> => {
     )
   `);
 
-  db.execute(`
+  database.execute(`
     CREATE TABLE IF NOT EXISTS channels (
       uuid TEXT PRIMARY KEY,
       name TEXT,
@@ -140,7 +201,7 @@ const initDB = async (name = "database"): Promise<DB> => {
     )
   `);
 
-  db.execute(`
+  database.execute(`
     CREATE TABLE IF NOT EXISTS messages (
       uuid TEXT PRIMARY KEY,
       fromUser TEXT NOT NULL,
@@ -151,12 +212,10 @@ const initDB = async (name = "database"): Promise<DB> => {
     )
   `);
 
-  return db;
+  return database;
 };
 
-const db = await initDB();
-
-const addExampleDataToDB = () => {
+const addExampleDataToDB = (db: DB) => {
   const testUserIDS: string[] = [];
   const testChannelIDS: string[] = [];
 
@@ -306,6 +365,13 @@ const getChannelData = async (target: string, token: string) => {
   return ["name", "members", "messages"];
 };
 
-const dbq = (args: string) => db.queryEntries(args);
+const rawQuery = (args: string, db: DB) => db.queryEntries(args);
 
-export { getChannelCollectionData, getChannelData, dbq, dbQuery, initDB, dropDB };
+export {
+  dbQuery,
+  dropDB,
+  getChannelCollectionData,
+  getChannelData,
+  initDB,
+  rawQuery,
+};
