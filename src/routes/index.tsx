@@ -30,7 +30,7 @@ const App: Component = () => {
   let msgElem: HTMLInputElement;
   const websocket = clientSocket;
   onMount(() => {
-    // websocket.init(`${location.origin.replace("http", "ws").replace("3000", "8080")}`, cookie().discoToken);
+    websocket.init(`${location.origin.replace("http", "ws").replace("3000", "8080")}`, cookie().discoToken);
 
     websocket.on("chat", (data) => {
       console.log("Incoming msg:", data);
@@ -83,9 +83,9 @@ const App: Component = () => {
       scrollDiv.scrollTop = scrollDiv.scrollHeight - scrollDiv.clientHeight;
     });
 
-    // onCleanup(() => {
-    //   websocket.close();
-    // });
+    onCleanup(() => {
+      websocket.close();
+    });
   });
 
   const msgSubmit = (event: SubmitEvent) => {

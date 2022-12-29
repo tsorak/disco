@@ -20,8 +20,12 @@ const verify = async (token: string) => {
   return await JWT.verify(token, key);
 };
 
-const isAuthorized = async (req: Request): Promise<JWT.Payload | null> => {
-  const discoToken = extractCookies(req)?.discoToken ?? "";
+const isAuthorised = async (
+  req: Request | string,
+): Promise<JWT.Payload | null> => {
+  const discoToken = typeof req === "string"
+    ? req
+    : extractCookies(req)?.discoToken ?? "";
   if (!discoToken) return null;
   try {
     const payload = await verify(discoToken);
@@ -34,4 +38,4 @@ const isAuthorized = async (req: Request): Promise<JWT.Payload | null> => {
   }
 };
 
-export { create, isAuthorized, verify };
+export { create, isAuthorised, verify };

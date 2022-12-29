@@ -1,14 +1,23 @@
-import { isAuthorized } from "./validate.ts";
+import { isAuthorised } from "./authorisation.ts";
 
 const connectedSockets: Map<string, WebSocket> = new Map();
 
 //TODO: sender: User, targets: channel.subscribers
-function broadcastMessage(options: { sender: { name: string | undefined } | undefined; targets: WebSocket[] | undefined; msg: string }) {
+function broadcastMessage(
+  options: {
+    sender: { name: string | undefined } | undefined;
+    targets: WebSocket[] | undefined;
+    msg: string;
+  },
+) {
   const { msg } = options;
-  const targets = options.targets ?? Array.from(connectedSockets).map(([_, v]) => v);
+  const targets = options.targets ??
+    Array.from(connectedSockets).map(([_, v]) => v);
   const sender = options.sender ?? { name: "AnonymousUser" };
 
-  targets.forEach((target) => target.send(JSON.stringify({ type: "chat", data: { sender, msg } })));
+  targets.forEach((target) =>
+    target.send(JSON.stringify({ type: "chat", data: { sender, msg } }))
+  );
 }
 
 export function handleUpgrade(req: Request): Response {
@@ -25,7 +34,7 @@ export function handleUpgrade(req: Request): Response {
 
   //   if (!token) return new Response("No token", { status: 401 });
 
-  //   if (!isAuthorized(token)) return new Response(null, { status: 401 });
+  //   if (!isAuthorised(token)) return new Response(null, { status: 401 });
 
   const upgrade = req.headers.get("upgrade") || "";
   if (upgrade.toLowerCase() != "websocket") {
@@ -41,18 +50,28 @@ export function handleUpgrade(req: Request): Response {
     console.log(`Socket Opened %c${socket.id}`, "color:#0f0");
     console.log(socket);
   };
-  socket.onmessage = (e: MessageEvent) => {
+  socket.onmessage = async (e: MessageEvent) => {
     try {
       // Parse the incoming message
       let incomingMessage = JSON.parse(e.data);
 
-      if (incomingMessage.type !== "ping") console.log(`[RECIEVED]`, incomingMessage);
+      if (incomingMessage.type !== "ping") {
+        console.log(`[RECIEVED]`, incomingMessage);
+      }
 
       switch (incomingMessage.type) {
         case "connect":
-          const token = incomingMessage.data.token ?? "";
-          if (!token || !isAuthorized(token)) socket.close(1000, "Invalid token");
-          socket.send(JSON.stringify({ type: "connect", data: "Authorised" }));
+          {
+            const token = incomingMessage.data.token ?? "";
+            console.log();
+
+            if (!token || !await isAuthorised(token)) {
+              socket.close(1000, "Invalid token");
+            }
+            socket.send(
+              JSON.stringify({ type: "connect", data: "Authorised" }),
+            );
+          }
           break;
         case "ping":
           socket.send(
@@ -62,18 +81,22 @@ export function handleUpgrade(req: Request): Response {
                 id: incomingMessage.data.id,
                 time: Date.now(),
               },
-            })
+            }),
           );
           break;
         case "chat":
-          // { msg, target: "@me/åtister", sender: loggedInUser.uuid, token: cookie().discoToken }
-          if (!isAuthorized(incomingMessage.data.token)) socket.close(1000, "Invalid token");
+          {
+            // { msg, target: "@me/åtister", sender: loggedInUser.uuid, token: cookie().discoToken }
+            if (!await isAuthorised(incomingMessage.data.token)) {
+              socket.close(1000, "Invalid token");
+            }
 
-          const msg: string = incomingMessage.data.msg.toString();
-          // const targets: WebSocket[] = getChannelSubscribers(incomingMessage.data.target);
+            const msg: string = incomingMessage.data.msg.toString();
+            // const targets: WebSocket[] = getChannelSubscribers(incomingMessage.data.target);
 
-          //TODO: broadcast to sockets subscribed to the target.
-          broadcastMessage({ msg });
+            //TODO: broadcast to sockets subscribed to the target.
+            broadcastMessage({ msg });
+          }
           break;
         default:
           break;

@@ -1,14 +1,14 @@
 import { db } from "./server.ts";
 import { dbQuery, UserRow } from "./db.ts";
 import type { DirectMessageRow } from "./db.ts";
-import { create, isAuthorized } from "./authorization.ts";
+import { create, isAuthorised } from "./authorisation.ts";
 import { Cookie } from "https://deno.land/x/another_cookiejar@v5.0.1/mod.ts";
 
 const appHandler = async (req: Request) => {
   const channelPath = new URL(req.url).pathname.split("/")
     .slice(2, 4);
 
-  const tokenPayload = await isAuthorized(req);
+  const tokenPayload = await isAuthorised(req);
   if (!tokenPayload) return new Response(null, { status: 403 });
 
   const { uuid } = tokenPayload;
@@ -76,7 +76,7 @@ const authHandler = async (req: Request) => {
 
   switch (req.method) {
     case "GET": {
-      const payload = await isAuthorized(req);
+      const payload = await isAuthorised(req);
       if (payload) {
         return new Response("Authorized", { status: 200 });
       } else {
