@@ -43,4 +43,6 @@ App
         
         ✔ use lucide icons @done(22-12-01 09:53)
 
+        ✔ Add ChannelList component @started(22-12-29 18:07) @done(22-12-29 19:01) @lasted(54m48s)
+
         ☐ implement websocket module 99%

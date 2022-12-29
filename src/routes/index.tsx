@@ -1,6 +1,7 @@
 import { PlusCircle, Gift, Sticker, Smile, HelpCircle, Inbox, Users, UserPlus, Pin, Video, PhoneCall, User, Phone, Home } from "lucide-solid";
 
 import { json, parseCookie, useServerContext } from "solid-start";
+import server$ from "solid-start/server";
 
 import { Component, onMount, createSignal, createEffect, onCleanup } from "solid-js";
 import { isServer } from "solid-js/web";
@@ -10,11 +11,21 @@ import { clientSocket } from "~/communication/websocket";
 import Message from "~/components/Message";
 import ChannelTitle from "~/components/ChannelTitle";
 import ConnectionInfo from "~/components/ConnectionInfo";
-import server$ from "solid-start/server";
+import ChannelList from "~/components/ChannelList";
+
+import { buildSignal } from "~/utils/signals";
 
 const API_URL = "http://localhost:8080";
 
 const App: Component = () => {
+  // const [state, setState] = createSignal({ channelCollection: [], channel: {}, userData: {} }, { equals: false });
+  const state = {
+    channelCollection: buildSignal([], {
+      equals(prev: [], next: []) {
+        return prev.length === (next?.length ?? 0);
+      },
+    }),
+  };
   const [activeMessages, setActiveMessages] = createSignal([]);
 
   const cookie = () => parseCookie(isServer ? useServerContext().request.headers.get("cookie") ?? "" : document.cookie);
@@ -64,12 +75,21 @@ const App: Component = () => {
       const path = useLocation().pathname;
       const data = await res(path, cookie().discoToken);
 
+      const { channelCollection } = data;
+
+      state.channelCollection.set(channelCollection);
+
       console.log("%cGot the following channel data:", "color: #0f0", data);
     });
 
     //phase
     createEffect(() => {
       console.log(`[%cPHASE%c] ${websocket.phase.get()}`, "color: #0cf", "color: initial");
+    });
+
+    createEffect(() => {
+      console.log("%cchannelCollection:", "background: #f00");
+      console.log(state.channelCollection.get());
     });
 
     //ms
@@ -122,23 +142,7 @@ const App: Component = () => {
                 </button>
               </div>
               <div class="overflow-y-auto flex-grow">
-                <ul class="flex flex-col justify-center gap-2 py-2">
-                  {/* <li class="mx-2 flex rounded overflow-hidden h-[44px]">
-                    <A href="/" class="p-2 flex-grow dark:hover:bg-[rgba(79,84,92,0.4)] flex items-center" activeClass="channel-selected">
-                      Home
-                    </A>
-                  </li> */}
-                  <li class="mx-2 flex rounded overflow-hidden h-[44px]">
-                    <A href="/app/@me/foo" class="p-2 flex-grow dark:hover:bg-[rgba(79,84,92,0.4)] flex items-center" activeClass="channel-selected">
-                      Foo
-                    </A>
-                  </li>
-                  <li class="mx-2 flex rounded overflow-hidden h-[44px]">
-                    <A href="/app/@me/bar" class="p-2 flex-grow dark:hover:bg-[rgba(79,84,92,0.4)] flex items-center" activeClass="channel-selected">
-                      Bar
-                    </A>
-                  </li>
-                </ul>
+                <ChannelList channels={state.channelCollection.get} />
               </div>
             </nav>
             <section class="panels">

@@ -33,7 +33,7 @@ const appHandler = async (req: Request) => {
             limit: 1,
           })[0] as unknown) as UserRow;
 
-          return { name: sender.name, avatar: "" };
+          return { name: sender.name, avatar: "", path: `@me/${senderUUID}` };
         });
       } else {
         //TODO: return subchannels for the requested DiscoServer
