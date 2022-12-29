@@ -20,11 +20,17 @@ POST http://localhost:8080/ HTTP/1.1
 #   "targets": ["uuid-0", "uuid-1"],
 # }
 
+### TOKENS
 
+GET http://localhost:8080/auth HTTP/1.1
+
+###
+
+POST http://localhost:8080/auth HTTP/1.1
 
 ### SIMPLE REQUESTS
 
-GET http://localhost:8080/ HTTP/1.1
+GET http://localhost:8080/app/@me/1284 HTTP/1.1
 
 ###
 

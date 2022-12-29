@@ -6,6 +6,7 @@ interface UserRow extends DiscoRow {
   name: string;
   password: string;
   subscriptions: string;
+  token: string;
 }
 interface ChannelRow extends DiscoRow {
   name: string;
@@ -14,6 +15,13 @@ interface ChannelRow extends DiscoRow {
 interface MessageRow extends DiscoRow {
   fromUser: string;
   relatedChannel: string;
+  content: string;
+  // FOREIGN KEY (fromUser) REFERENCES users(uuid)
+  // FOREIGN KEY (relatedChannel) REFERENCES channels(uuid)
+}
+interface DirectMessageRow extends DiscoRow {
+  sender: string;
+  reciever: string;
   content: string;
   // FOREIGN KEY (fromUser) REFERENCES users(uuid)
   // FOREIGN KEY (relatedChannel) REFERENCES channels(uuid)
@@ -69,11 +77,17 @@ const dbQuery = (db: DB) => {
   return {
     table(name: string) {
       return {
-        create: (data: UserRow | ChannelRow | MessageRow) => {
-          type PossibleRowTypes = UserRow | ChannelRow | MessageRow;
+        create: (
+          data: UserRow | ChannelRow | MessageRow | DirectMessageRow,
+        ) => {
+          type PossibleRowTypes =
+            | UserRow
+            | ChannelRow
+            | MessageRow
+            | DirectMessageRow;
 
           function isUserRow(row: PossibleRowTypes): row is UserRow {
-            return ["uuid", "name", "password", "subscriptions"].map((
+            return ["uuid", "name", "password", "subscriptions", "token"].map((
               k,
               _,
               arr,
@@ -89,19 +103,32 @@ const dbQuery = (db: DB) => {
           }
 
           function isMessageRow(row: PossibleRowTypes): row is MessageRow {
-            return ["uuid", "fromUser", "relatedChannel", "content"].map((
-              k,
-              _,
-              arr,
-            ) => k in row && Object.keys(row).length === arr.length).every((
-              k,
-            ) => k === true);
+            return ["uuid", "fromUser", "relatedChannel", "content"]
+              .map((
+                k,
+                _,
+                arr,
+              ) => k in row && Object.keys(row).length === arr.length).every((
+                k,
+              ) => k === true);
+          }
+          function isDirectMessageRow(
+            row: PossibleRowTypes,
+          ): row is DirectMessageRow {
+            return ["uuid", "sender", "reciever", "content"]
+              .map((
+                k,
+                _,
+                arr,
+              ) => k in row && Object.keys(row).length === arr.length).every((
+                k,
+              ) => k === true);
           }
 
           if (isUserRow(data) && name === "users") {
             const userRow = data as UserRow;
             return sendQuery(
-              `INSERT INTO ${name} VALUES('${userRow.uuid}','${userRow.name}','${userRow.password}','${userRow.subscriptions}') RETURNING *`,
+              `INSERT INTO ${name} VALUES('${userRow.uuid}','${userRow.name}','${userRow.password}','${userRow.subscriptions}','${userRow.token}') RETURNING *`,
             );
           } else if (isChannelRow(data) && name === "channels") {
             const channelRow = data as ChannelRow;
@@ -112,6 +139,11 @@ const dbQuery = (db: DB) => {
             const messageRow = data as MessageRow;
             return sendQuery(
               `INSERT INTO ${name} VALUES('${messageRow.uuid}',(SELECT uuid FROM users WHERE uuid=${messageRow.fromUser} LIMIT 1),(SELECT uuid FROM channels WHERE uuid=${messageRow.relatedChannel} LIMIT 1),'${messageRow.content}') RETURNING *`,
+            );
+          } else if (isDirectMessageRow(data) && name === "direct_messages") {
+            const messageRow = data as DirectMessageRow;
+            return sendQuery(
+              `INSERT INTO ${name} VALUES('${messageRow.uuid}',(SELECT uuid FROM users WHERE uuid=${messageRow.sender} LIMIT 1),(SELECT uuid FROM users WHERE uuid=${messageRow.reciever} LIMIT 1),'${messageRow.content}') RETURNING *`,
             );
           } else {
             return undefined;
@@ -189,7 +221,8 @@ const initDB = async (name = "database"): Promise<DB> => {
       uuid TEXT PRIMARY KEY,
       name TEXT,
       password TEXT,
-      subscriptions TEXT
+      subscriptions TEXT,
+      token TEXT
     )
   `);
 
@@ -204,13 +237,25 @@ const initDB = async (name = "database"): Promise<DB> => {
   database.execute(`
     CREATE TABLE IF NOT EXISTS messages (
       uuid TEXT PRIMARY KEY,
-      fromUser TEXT NOT NULL,
-      relatedChannel TEXT NOT NULL,
+      sender TEXT NOT NULL,
+      reciever TEXT,
       content TEXT,
-      FOREIGN KEY (fromUser) REFERENCES users(uuid)
-      FOREIGN KEY (relatedChannel) REFERENCES channels(uuid)
+      FOREIGN KEY (sender) REFERENCES users(uuid)
+      FOREIGN KEY (reciever) REFERENCES channels(uuid)
     )
   `);
+
+  database.execute(`
+    CREATE TABLE IF NOT EXISTS direct_messages (
+      uuid TEXT PRIMARY KEY,
+      sender TEXT NOT NULL,
+      reciever TEXT,
+      content TEXT,
+      FOREIGN KEY (sender) REFERENCES users(uuid)
+      FOREIGN KEY (reciever) REFERENCES users(uuid)
+    )
+  `);
+  //TODO: toUser FOREIGN KEY --> users.uuid
 
   return database;
 };
@@ -375,3 +420,5 @@ export {
   initDB,
   rawQuery,
 };
+
+export type { ChannelRow, DirectMessageRow, MessageRow, UserRow };

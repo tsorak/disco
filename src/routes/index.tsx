@@ -12,6 +12,8 @@ import ChannelTitle from "~/components/ChannelTitle";
 import ConnectionInfo from "~/components/ConnectionInfo";
 import server$ from "solid-start/server";
 
+const API_URL = "http://localhost:8080";
+
 const App: Component = () => {
   const [activeMessages, setActiveMessages] = createSignal([]);
 
@@ -28,7 +30,7 @@ const App: Component = () => {
   let msgElem: HTMLInputElement;
   const websocket = clientSocket;
   onMount(() => {
-    websocket.init(`${location.origin.replace("http", "ws").replace("3000", "8080")}`, cookie().discoToken);
+    // websocket.init(`${location.origin.replace("http", "ws").replace("3000", "8080")}`, cookie().discoToken);
 
     websocket.on("chat", (data) => {
       console.log("Incoming msg:", data);
@@ -37,17 +39,31 @@ const App: Component = () => {
 
     //isRouting
     createEffect(async () => {
-      const res = server$(async (path, user) => {
-        console.log(
-          `
-          Client is requesting the following channel: ${path} 
-          As: ${JSON.stringify(user)} 
-          `
-        );
-        return { path, data: [] };
+      const res = server$(async (path: string, token: string) => {
+        // console.log(
+        //   `
+        //   Client is requesting the following channel: ${path}
+        //   As: ${JSON.stringify(user)}
+        //   `
+        // );
+
+        const headers = new Headers();
+        headers.set("cookie", `discoToken=${token}`);
+
+        try {
+          const apiRes = await fetch(API_URL + path, {
+            headers,
+          });
+          const json = await apiRes.json();
+          console.log(json); // {requestedPaths: string[], userData: {name, friendcode, avatar}, channelCollection: channel{name:""}[], channel: {name, members[], messages[]}}
+          return json;
+        } catch (error) {
+          return { path, error };
+        }
       });
       const path = useLocation().pathname;
-      const data = await res(path, getUserdata());
+      const data = await res(path, cookie().discoToken);
+
       console.log("%cGot the following channel data:", "color: #0f0", data);
     });
 
@@ -67,9 +83,9 @@ const App: Component = () => {
       scrollDiv.scrollTop = scrollDiv.scrollHeight - scrollDiv.clientHeight;
     });
 
-    onCleanup(() => {
-      websocket.close();
-    });
+    // onCleanup(() => {
+    //   websocket.close();
+    // });
   });
 
   const msgSubmit = (event: SubmitEvent) => {

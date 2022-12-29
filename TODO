@@ -9,6 +9,11 @@ API
           ☐ UPDATE
           ☐ DELETE
         ✔ Add database adapter/interface @done(22-12-28 14:13) (dbQuery)
+
+        dbQuery make all property values strings? dx
+
+        give channels relatedUsers property when it is a chat between two users? 
+        channelCollection === "@me" ? typeof channel === user.uuid ??? 
         
         ☐ Add fromUser and relatedChannel checks to dbQuery.create
     

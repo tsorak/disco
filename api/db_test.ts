@@ -37,6 +37,7 @@ Deno.test("Add rows", async () => {
     name: "2",
     password: "3",
     subscriptions: "[]",
+    token: "912873",
   });
   const channelRow = await dbQuery(db).table("channels").create({
     uuid: "456",
@@ -48,25 +49,25 @@ Deno.test("Add rows", async () => {
     fromUser: "123",
     relatedChannel: "456",
     content: "4",
+    // toUser: "",
   });
-  const invalidRow = await dbQuery(db).table("users").create({
-    uuid: "1",
-    fromUser: "2",
-    relatedChannel: "3",
-    content: "4",
-    name: "badKey",
-  });
+  // const invalidRow = await dbQuery(db).table("users").create({
+  //   uuid: "1",
+  //   fromUser: "2",
+  //   relatedChannel: "3",
+  //   content: "4",
+  // });
 
   console.log(userRow);
   console.log(channelRow);
   console.log(messageRow);
-  console.log(invalidRow);
+  // console.log(invalidRow);
 
   const actual = [
     !!userRow,
     !!channelRow,
     !!messageRow,
-    invalidRow === undefined,
+    // invalidRow === undefined,
   ];
 
   console.log(actual);
