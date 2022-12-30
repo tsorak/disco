@@ -16,6 +16,8 @@ API
         channelCollection === "@me" ? typeof channel === user.uuid ??? 
         
         ✘ Add fromUser and relatedChannel checks to dbQuery.create @cancelled(22-12-29 17:23)
+
+        if no channel name is set during creation, set name to each subscribers name sepparated by comma.
     
     ☐ Add Authentication
 

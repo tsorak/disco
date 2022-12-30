@@ -9,17 +9,11 @@ interface UserRow extends DiscoRow {
   token: string;
 }
 interface ChannelRow extends DiscoRow {
-  name: string;
+  parent: string | null;
+  name: string | null;
   subscribers: string;
 }
 interface MessageRow extends DiscoRow {
-  fromUser: string;
-  relatedChannel: string;
-  content: string;
-  // FOREIGN KEY (fromUser) REFERENCES users(uuid)
-  // FOREIGN KEY (relatedChannel) REFERENCES channels(uuid)
-}
-interface DirectMessageRow extends DiscoRow {
   sender: string;
   reciever: string;
   content: string;
@@ -78,13 +72,12 @@ const dbQuery = (db: DB) => {
     table(name: string) {
       return {
         create: (
-          data: UserRow | ChannelRow | MessageRow | DirectMessageRow,
+          data: UserRow | ChannelRow | MessageRow,
         ) => {
           type PossibleRowTypes =
             | UserRow
             | ChannelRow
-            | MessageRow
-            | DirectMessageRow;
+            | MessageRow;
 
           function isUserRow(row: PossibleRowTypes): row is UserRow {
             return ["uuid", "name", "password", "subscriptions", "token"].map((
@@ -97,24 +90,12 @@ const dbQuery = (db: DB) => {
           }
 
           function isChannelRow(row: PossibleRowTypes): row is ChannelRow {
-            return ["uuid", "name", "subscribers"].map((k, _, arr) =>
+            return ["uuid", "parent", "name", "subscribers"].map((k, _, arr) =>
               k in row && Object.keys(row).length === arr.length
             ).every((k) => k === true);
           }
 
           function isMessageRow(row: PossibleRowTypes): row is MessageRow {
-            return ["uuid", "fromUser", "relatedChannel", "content"]
-              .map((
-                k,
-                _,
-                arr,
-              ) => k in row && Object.keys(row).length === arr.length).every((
-                k,
-              ) => k === true);
-          }
-          function isDirectMessageRow(
-            row: PossibleRowTypes,
-          ): row is DirectMessageRow {
             return ["uuid", "sender", "reciever", "content"]
               .map((
                 k,
@@ -133,17 +114,16 @@ const dbQuery = (db: DB) => {
           } else if (isChannelRow(data) && name === "channels") {
             const channelRow = data as ChannelRow;
             return sendQuery(
-              `INSERT INTO ${name} VALUES('${channelRow.uuid}','${channelRow.name}','${channelRow.subscribers}') RETURNING *`,
+              `INSERT INTO ${name} VALUES('${channelRow.uuid}',${
+                channelRow.parent ? `'${channelRow.parent}'` : null
+              },${
+                channelRow.name ? `'${channelRow.name}'` : null
+              },'${channelRow.subscribers}') RETURNING *`,
             );
           } else if (isMessageRow(data) && name === "messages") {
             const messageRow = data as MessageRow;
             return sendQuery(
-              `INSERT INTO ${name} VALUES('${messageRow.uuid}',(SELECT uuid FROM users WHERE uuid=${messageRow.fromUser} LIMIT 1),(SELECT uuid FROM channels WHERE uuid=${messageRow.relatedChannel} LIMIT 1),'${messageRow.content}') RETURNING *`,
-            );
-          } else if (isDirectMessageRow(data) && name === "direct_messages") {
-            const messageRow = data as DirectMessageRow;
-            return sendQuery(
-              `INSERT INTO ${name} VALUES('${messageRow.uuid}',(SELECT uuid FROM users WHERE uuid=${messageRow.sender} LIMIT 1),(SELECT uuid FROM users WHERE uuid=${messageRow.reciever} LIMIT 1),'${messageRow.content}') RETURNING *`,
+              `INSERT INTO ${name} VALUES('${messageRow.uuid}',(SELECT uuid FROM users WHERE uuid=${messageRow.sender} LIMIT 1),(SELECT uuid FROM channels WHERE uuid=${messageRow.reciever} LIMIT 1),'${messageRow.content}') RETURNING *`,
             );
           } else {
             return undefined;
@@ -152,7 +132,7 @@ const dbQuery = (db: DB) => {
         read: (
           options: {
             column?: string;
-            where?: { uuid?: string } | Record<string, string>;
+            where?: { uuid?: string } | Record<string, string | null>;
             limit?: number;
           },
         ) => {
@@ -163,14 +143,15 @@ const dbQuery = (db: DB) => {
           }
 
           const buildConditions = (
-            conditions: Record<string, string>,
+            conditions: Record<string, string | null>,
           ): string => {
             return Object.entries(conditions)
               .map(([key, value], i) => {
-                if (i === 0) {
-                  return ` WHERE ${key}='${value}'`;
+                const prefix = i === 0 ? " WHERE" : "AND";
+                if (value === null) {
+                  return `${prefix} ${key} IS NULL`;
                 }
-                return `AND ${key}='${value}'`;
+                return `${prefix} ${key}='${value}'`;
               })
               .join(" ");
           };
@@ -229,6 +210,7 @@ const initDB = async (name = "database"): Promise<DB> => {
   database.execute(`
     CREATE TABLE IF NOT EXISTS channels (
       uuid TEXT PRIMARY KEY,
+      parent TEXT,
       name TEXT,
       subscribers TEXT
     )
@@ -238,26 +220,23 @@ const initDB = async (name = "database"): Promise<DB> => {
     CREATE TABLE IF NOT EXISTS messages (
       uuid TEXT PRIMARY KEY,
       sender TEXT NOT NULL,
-      reciever TEXT,
+      reciever TEXT NOT NULL,
       content TEXT,
       FOREIGN KEY (sender) REFERENCES users(uuid)
       FOREIGN KEY (reciever) REFERENCES channels(uuid)
     )
   `);
 
-  database.execute(`
-    CREATE TABLE IF NOT EXISTS direct_messages (
-      uuid TEXT PRIMARY KEY,
-      sender TEXT NOT NULL,
-      reciever TEXT,
-      content TEXT,
-      FOREIGN KEY (sender) REFERENCES users(uuid)
-      FOREIGN KEY (reciever) REFERENCES users(uuid)
-    )
-  `);
-  //TODO: toUser FOREIGN KEY --> users.uuid
-
   return database;
+};
+
+const getUsersByUUIDs = (ids: UserRow["uuid"][], db: DB): UserRow[] => {
+  const usersArr = ids.map((id: string) => {
+    return (dbQuery(db).table("users").read({
+      where: { uuid: id },
+    })[0] as unknown) as UserRow;
+  });
+  return usersArr;
 };
 
 const addExampleDataToDB = (db: DB) => {
@@ -417,8 +396,9 @@ export {
   dropDB,
   getChannelCollectionData,
   getChannelData,
+  getUsersByUUIDs,
   initDB,
   rawQuery,
 };
 
-export type { ChannelRow, DirectMessageRow, MessageRow, UserRow };
+export type { ChannelRow, MessageRow, UserRow };
