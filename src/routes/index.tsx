@@ -19,12 +19,19 @@ const API_URL = "http://localhost:8080";
 
 const App: Component = () => {
   // const [state, setState] = createSignal({ channelCollection: [], channel: {}, userData: {} }, { equals: false });
+  type Channel = {
+    name: string;
+    messages: any[];
+    members: any[];
+  };
+
   const state = {
     channelCollection: buildSignal([], {
       equals(prev: [], next: []) {
         return prev.length === (next?.length ?? 0);
       },
     }),
+    channel: createSignal<undefined | Channel>(undefined),
   };
   const [activeMessages, setActiveMessages] = createSignal([]);
 
@@ -75,9 +82,10 @@ const App: Component = () => {
       const path = useLocation().pathname;
       const data = await res(path, cookie().discoToken);
 
-      const { channelCollection } = data;
+      const { channelCollection, channel } = data;
 
       state.channelCollection.set(channelCollection);
+      state.channel[1](channel);
 
       console.log("%cGot the following channel data:", "color: #0f0", data);
     });
@@ -92,6 +100,11 @@ const App: Component = () => {
       console.log(state.channelCollection.get());
     });
 
+    createEffect(() => {
+      console.log("%cchannel:", "background: #ff0");
+      console.log(state.channel[0]());
+    });
+
     //ms
     // createEffect(() => {
     //   console.log(websocket.ms.get());
@@ -99,7 +112,7 @@ const App: Component = () => {
 
     //Autoscroll
     createEffect(() => {
-      activeMessages().length;
+      state.channel[0]()?.messages.length;
       scrollDiv.scrollTop = scrollDiv.scrollHeight - scrollDiv.clientHeight;
     });
 
@@ -186,9 +199,7 @@ const App: Component = () => {
                     <ol class="list-none flex flex-col break-all">
                       {/* <Message id={"1"} sender={{ id: undefined, name: undefined }} reactions={[{ emote: "😐", count: 1 }]} date={undefined} content={"Hello World!"} />
                       <Message content={"Hello World!"} /> */}
-                      {activeMessages().map((chatEntry) => (
-                        <Message content={chatEntry.msg} sender={{ name: chatEntry.sender.name }} />
-                      ))}
+                      {state.channel[0]() ? state.channel[0]().messages.map((chatEntry) => <Message content={chatEntry.content} sender={{ name: state.channel[0]().members.find((member) => member.uuid === chatEntry.sender).name }} />) : null}
                       <div class="spacer h-6"></div>
                     </ol>
                   </div>
@@ -222,7 +233,13 @@ const App: Component = () => {
                   </div>
                 </form>
               </div>
-              <div class="members w-60 dark:bg-dc-sidebar-bg-dark flex-none"></div>
+              <div class="members w-60 dark:bg-dc-sidebar-bg-dark flex-none">
+                {state.channel[0]()
+                  ? state.channel[0]().members.map((member) => {
+                      return <p>{member.name}</p>;
+                    })
+                  : null}
+              </div>
             </div>
           </div>
         </div>

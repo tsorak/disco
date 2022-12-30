@@ -10,7 +10,7 @@ const ChannelList: Component = (props) => {
         ? channels().map((channel) => (
             <li class="mx-2 flex rounded overflow-hidden h-[44px]">
               <A href={`/app/${channel.path}`} class="p-2 flex-grow dark:hover:bg-[rgba(79,84,92,0.4)] flex items-center" activeClass="channel-selected">
-                {channel.name}
+                {channel.name ?? channel.path}
               </A>
             </li>
           ))
