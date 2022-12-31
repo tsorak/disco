@@ -4,7 +4,7 @@ const pinger = {
 
   start(emit: Function, ms: { get: Function; set: Function }, on: Function) {
     this.intervalId = setInterval(() => {
-      const id = crypto.randomUUID();
+      const id = crypto.randomUUID ? crypto.randomUUID() : Date.now();
       emit("ping", { id, ms: ms.get() });
       this.timeSent = Date.now();
     }, 1000);
