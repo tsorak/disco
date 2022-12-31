@@ -10,6 +10,7 @@ dbQuery(db).table("users").create({
   password: "3",
   subscriptions: JSON.stringify(["0", "1", "2"]),
   token: "123",
+  sessionSockets: "[]",
 } as UserRow);
 dbQuery(db).table("users").create({
   uuid: "2",
@@ -17,6 +18,7 @@ dbQuery(db).table("users").create({
   password: "3",
   subscriptions: JSON.stringify(["0", "2"]),
   token: "123",
+  sessionSockets: "[]",
 } as UserRow);
 dbQuery(db).table("users").create({
   uuid: "3",
@@ -24,6 +26,7 @@ dbQuery(db).table("users").create({
   password: "3",
   subscriptions: JSON.stringify(["1", "2"]),
   token: "123",
+  sessionSockets: "[]",
 } as UserRow);
 //CHANNELS
 dbQuery(db).table("channels").create({

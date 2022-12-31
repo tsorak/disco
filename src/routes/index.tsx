@@ -28,22 +28,23 @@ const App: Component = () => {
 
   const state = {
     channelCollection: buildSignal([], {
-      equals(prev: [], next: []) {
-        return prev.length === (next?.length ?? 0);
-      },
+      // equals(prev: [], next: []) {
+      //   return prev.length === (next?.length ?? 0);
+      // },
     }),
     channel: createSignal<undefined | Channel>(undefined),
+    activeChannel: createSignal<string>(""),
   };
-  const [activeMessages, setActiveMessages] = createSignal([]);
+  // const [activeMessages, setActiveMessages] = createSignal([]);
 
   const cookie = () => parseCookie(isServer ? useServerContext().request.headers.get("cookie") ?? "" : document.cookie);
 
-  const loggedInUser = {
-    username: "karots",
-    uuid: "uuid-for-profile",
-  };
+  // const loggedInUser = {
+  //   username: "karots",
+  //   uuid: "uuid-for-profile",
+  // };
 
-  const getUserdata = () => Object.assign(loggedInUser, { token: cookie().discoToken });
+  // const getUserdata = () => Object.assign(loggedInUser, { token: cookie().discoToken });
 
   let scrollDiv: HTMLDivElement | undefined;
   let msgElem: HTMLInputElement;
@@ -53,7 +54,12 @@ const App: Component = () => {
 
     websocket.on("chat", (data) => {
       console.log("Incoming msg:", data);
-      setActiveMessages([...activeMessages(), data]);
+      // setActiveMessages([...activeMessages(), data]);
+      if (data.reciever === state.activeChannel[0]().split("/")[1]) {
+        state.channel[1]((prev) => {
+          return { ...prev, messages: prev.messages.concat(data) };
+        });
+      }
     });
 
     //isRouting
@@ -83,10 +89,11 @@ const App: Component = () => {
       const path = useLocation().pathname;
       const data = await res(path, cookie().discoToken);
 
-      const { channelCollection, channel } = data;
+      const { channelCollection, channel, requestedPaths } = data;
 
       state.channelCollection.set(channelCollection);
       state.channel[1](channel);
+      state.activeChannel[1](requestedPaths.join("/"));
 
       console.log("%cGot the following channel data:", "color: #0f0", data);
     });
@@ -104,6 +111,11 @@ const App: Component = () => {
     createEffect(() => {
       console.log("%cchannel:", "background: #ff0");
       console.log(state.channel[0]());
+    });
+
+    createEffect(() => {
+      console.log("%cactiveChannel:", "background: #0f0");
+      console.log(state.activeChannel[0]());
     });
 
     //ms
@@ -131,8 +143,12 @@ const App: Component = () => {
     const msg = data.get("msg");
     if (!msg) return;
 
-    console.log("MSG:", msg);
-    websocket.emit("chat", { msg, target: "@me/åtister", sender: loggedInUser.uuid, token: cookie().discoToken });
+    const target = state.activeChannel[0]().split("/");
+
+    if (!target[1]) return;
+
+    console.log(`Sending: '${msg}' to ${state.activeChannel[0]()}`);
+    websocket.emit("chat", { msg, target: state.activeChannel[0](), token: cookie().discoToken });
     msgElem.value = null;
   };
 

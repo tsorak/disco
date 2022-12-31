@@ -7,6 +7,7 @@ interface UserRow extends DiscoRow {
   password: string;
   subscriptions: string;
   token: string;
+  sessionSockets: string;
 }
 interface ChannelRow extends DiscoRow {
   parent: string | null;
@@ -68,6 +69,25 @@ const dbQuery = (db: DB) => {
     return db.queryEntries(query);
   }
 
+  const buildConditions = (
+    conditions: Record<string, string | string[] | null>,
+  ): string => {
+    return Object.entries(conditions)
+      .map(([key, value], i) => {
+        const prefix = i === 0 ? " WHERE" : "AND";
+        if (value === null) {
+          return `${prefix} ${key} IS NULL`;
+        }
+        if (typeof value === "object") {
+          const searchValues = Object.values(value).join("','");
+
+          return `${prefix} ${key} IN ('${searchValues}')`;
+        }
+        return `${prefix} ${key}='${value}'`;
+      })
+      .join(" ");
+  };
+
   return {
     table(name: string) {
       return {
@@ -80,7 +100,14 @@ const dbQuery = (db: DB) => {
             | MessageRow;
 
           function isUserRow(row: PossibleRowTypes): row is UserRow {
-            return ["uuid", "name", "password", "subscriptions", "token"].map((
+            return [
+              "uuid",
+              "name",
+              "password",
+              "subscriptions",
+              "token",
+              "sessionSockets",
+            ].map((
               k,
               _,
               arr,
@@ -109,7 +136,7 @@ const dbQuery = (db: DB) => {
           if (isUserRow(data) && name === "users") {
             const userRow = data as UserRow;
             return sendQuery(
-              `INSERT INTO ${name} VALUES('${userRow.uuid}','${userRow.name}','${userRow.password}','${userRow.subscriptions}','${userRow.token}') RETURNING *`,
+              `INSERT INTO ${name} VALUES('${userRow.uuid}','${userRow.name}','${userRow.password}','${userRow.subscriptions}','${userRow.token}','${userRow.sessionSockets}') RETURNING *`,
             );
           } else if (isChannelRow(data) && name === "channels") {
             const channelRow = data as ChannelRow;
@@ -132,7 +159,9 @@ const dbQuery = (db: DB) => {
         read: (
           options: {
             column?: string;
-            where?: { uuid?: string } | Record<string, string | null>;
+            where?:
+              | { uuid?: string | string[] }
+              | Record<string, string | string[] | null>;
             limit?: number;
           },
         ) => {
@@ -142,25 +171,35 @@ const dbQuery = (db: DB) => {
             return sendQuery(`SELECT ${column} FROM ${name}`);
           }
 
-          const buildConditions = (
-            conditions: Record<string, string | null>,
-          ): string => {
-            return Object.entries(conditions)
-              .map(([key, value], i) => {
-                const prefix = i === 0 ? " WHERE" : "AND";
-                if (value === null) {
-                  return `${prefix} ${key} IS NULL`;
-                }
-                return `${prefix} ${key}='${value}'`;
-              })
-              .join(" ");
-          };
-
           return sendQuery(
             `SELECT ${column} FROM ${name}${buildConditions(options.where)}`,
           );
         },
-        update: () => {},
+        update: (
+          columns: Record<string, string>,
+          options: {
+            where?:
+              | { uuid?: string | string[] }
+              | Record<string, string | string[] | null>;
+          },
+        ) => {
+          if (!options || !options.where) {
+            return;
+            // return sendQuery(`SELECT ${column} FROM ${name}`);
+          }
+
+          const buildSetters = (cols: Record<string, string>) => {
+            return Object.entries(cols).map(([key, val]) => {
+              return `${key} = '${val}'`;
+            }).join(", ");
+          };
+
+          return sendQuery(
+            `UPDATE ${name} SET ${buildSetters(columns)}${
+              buildConditions(options.where)
+            } RETURNING *`,
+          );
+        },
         delete: () => {},
         // row(where: { uuid?: string } | Record<string, string>, options?: { limit?: number }) {
         //   options ? (options = options.limit ? ` LIMIT ${options.limit}` : undefined) : undefined;
@@ -199,11 +238,12 @@ const initDB = async (name = "database"): Promise<DB> => {
 
   database.execute(`
     CREATE TABLE IF NOT EXISTS users (
-      uuid TEXT PRIMARY KEY,
-      name TEXT,
-      password TEXT,
-      subscriptions TEXT,
-      token TEXT
+      uuid TEXT PRIMARY KEY NOT NULL,
+      name TEXT NOT NULL,
+      password TEXT NOT NULL,
+      subscriptions TEXT NOT NULL,
+      token TEXT NOT NULL,
+      sessionSockets TEXT NOT NULL
     )
   `);
 

@@ -62,3 +62,4 @@ App
           (on isRouting and socket message event)
           ☐ Display an unread count circle on channels and channelCollections
           
+        ☐ UserData component (bottom left)

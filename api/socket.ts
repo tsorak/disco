@@ -1,22 +1,30 @@
 import { isAuthorised } from "./authorisation.ts";
+import { ChannelRow, dbQuery, MessageRow, UserRow } from "./db.ts";
+import { db } from "./server.ts";
 
 const connectedSockets: Map<string, WebSocket> = new Map();
 
 //TODO: sender: User, targets: channel.subscribers
 function broadcastMessage(
   options: {
-    sender: { name: string | undefined } | undefined;
-    targets: WebSocket[] | undefined;
-    msg: string;
+    uuid: string;
+    sender: string;
+    reciever: string;
+    content: string;
+    targets: WebSocket[];
   },
 ) {
-  const { msg } = options;
-  const targets = options.targets ??
-    Array.from(connectedSockets).map(([_, v]) => v);
-  const sender = options.sender ?? { name: "AnonymousUser" };
+  const { uuid, sender, reciever, content, targets } = options;
+
+  if (!targets) return;
 
   targets.forEach((target) =>
-    target.send(JSON.stringify({ type: "chat", data: { sender, msg } }))
+    target.send(
+      JSON.stringify({
+        type: "chat",
+        data: { uuid, sender, reciever, content },
+      }),
+    )
   );
 }
 
@@ -62,12 +70,35 @@ export function handleUpgrade(req: Request): Response {
       switch (incomingMessage.type) {
         case "connect":
           {
-            const token = incomingMessage.data.token ?? "";
-            console.log();
+            const tokenPayload = await isAuthorised(incomingMessage.data.token);
 
-            if (!token || !await isAuthorised(token)) {
+            if (!tokenPayload) {
               socket.close(1000, "Invalid token");
+              return;
             }
+
+            socket.owner = tokenPayload.uuid;
+
+            //TODO: v MAKE FUNCTION
+            const currentSessionSockets = dbQuery(db).table("users").read({
+              column: "sessionSockets",
+              where: { uuid: tokenPayload.uuid as string },
+            })[0].sessionSockets as string;
+
+            let parsed;
+            try {
+              parsed = JSON.parse(currentSessionSockets);
+            } catch (_error) {
+              parsed = [];
+            }
+
+            dbQuery(db).table("users").update({
+              sessionSockets: JSON.stringify([...parsed, socket.id]),
+            }, {
+              where: { uuid: tokenPayload.uuid as string },
+            });
+            //TODO: ^ MAKE FUNCTION
+
             socket.send(
               JSON.stringify({ type: "connect", data: "Authorised" }),
             );
@@ -87,15 +118,57 @@ export function handleUpgrade(req: Request): Response {
         case "chat":
           {
             // { msg, target: "@me/åtister", sender: loggedInUser.uuid, token: cookie().discoToken }
-            if (!await isAuthorised(incomingMessage.data.token)) {
+            const tokenPayload = await isAuthorised(incomingMessage.data.token);
+
+            if (!tokenPayload) {
               socket.close(1000, "Invalid token");
+              return;
             }
 
-            const msg: string = incomingMessage.data.msg.toString();
-            // const targets: WebSocket[] = getChannelSubscribers(incomingMessage.data.target);
+            const channelID = incomingMessage.data.target.split("/")[1];
+
+            const targetChannel = (dbQuery(db).table("channels").read({
+              where: { uuid: channelID },
+            })[0] as unknown) as ChannelRow;
+
+            const channelSubscribers = JSON.parse(
+              targetChannel.subscribers,
+            ) as string[];
+
+            const targetUsers = (dbQuery(db).table("users").read({
+              where: { uuid: channelSubscribers },
+              column: "sessionSockets",
+            }) as unknown) as { sessionSockets: string }[];
+
+            const targetUsersSockets = targetUsers.map((sockets) => {
+              const { sessionSockets } = sockets;
+
+              let parsed;
+              try {
+                parsed = JSON.parse(sessionSockets);
+              } catch (error) {
+                parsed = [];
+              }
+
+              return parsed;
+            }).flat() as string[];
+
+            const targets: WebSocket[] = targetUsersSockets.map((socketID) => {
+              return connectedSockets.get(socketID)!;
+            });
 
             //TODO: broadcast to sockets subscribed to the target.
-            broadcastMessage({ msg });
+
+            const messageRow: MessageRow = {
+              uuid: crypto.randomUUID(),
+              sender: tokenPayload.uuid as string,
+              reciever: channelID as string,
+              content: incomingMessage.data.msg as string,
+            };
+
+            broadcastMessage({ ...messageRow, targets });
+
+            dbQuery(db).table("messages").create(messageRow);
           }
           break;
         default:
@@ -111,7 +184,32 @@ export function handleUpgrade(req: Request): Response {
   socket.onerror = (e) => console.log("socket errored:", e);
   socket.onclose = () => {
     connectedSockets.delete(socket.id);
-    console.log(`Socket Closed %c${socket.id}`, "color:#f00");
+
+    //TODO: v MAKE FUNCTION
+    const currentSessionSockets = dbQuery(db).table("users").read({
+      column: "sessionSockets",
+      where: { uuid: socket.owner as string },
+    })[0].sessionSockets as string;
+
+    let parsed;
+    try {
+      parsed = JSON.parse(currentSessionSockets);
+    } catch (_error) {
+      parsed = [];
+    }
+
+    dbQuery(db).table("users").update({
+      sessionSockets: JSON.stringify(parsed.filter((id) => {
+        return id !== socket.id;
+      })),
+    }, {
+      where: { uuid: socket.owner as string },
+    });
+    //TODO: ^ MAKE FUNCTION
+    console.log(
+      `Socket Closed %c${socket.id} OWNER ${socket.owner}`,
+      "color:#f00",
+    );
   };
   return response;
 }
