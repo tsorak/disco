@@ -16,7 +16,7 @@ import ChannelList from "~/components/ChannelList";
 import { buildSignal } from "~/utils/signals";
 import Member from "~/components/Member";
 
-const API_URL = "http://localhost:8080";
+const API_URL = "http://127.0.0.1:8080";
 
 const App: Component = () => {
   // const [state, setState] = createSignal({ channelCollection: [], channel: {}, userData: {} }, { equals: false });
