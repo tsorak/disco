@@ -14,6 +14,7 @@ import ConnectionInfo from "~/components/ConnectionInfo";
 import ChannelList from "~/components/ChannelList";
 
 import { buildSignal } from "~/utils/signals";
+import Member from "~/components/Member";
 
 const API_URL = "http://localhost:8080";
 
@@ -233,10 +234,11 @@ const App: Component = () => {
                   </div>
                 </form>
               </div>
-              <div class="members w-60 dark:bg-dc-sidebar-bg-dark flex-none">
+              <div class="members w-60 dark:bg-dc-sidebar-bg-dark flex-none flex flex-col py-2 gap-1">
+                {state.channel[0]() ? <p class="mx-4 mt-3 text-xs font-semibold select-none">MEMBERS - {state.channel[0]()?.members.length}</p> : null}
                 {state.channel[0]()
                   ? state.channel[0]().members.map((member) => {
-                      return <p>{member.name}</p>;
+                      return <Member {...member} />;
                     })
                   : null}
               </div>

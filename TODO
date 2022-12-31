@@ -21,7 +21,7 @@ API
     
     ☐ Add Authentication
 
-    ☐ Add Authorization (JWT --> validate.ts)
+    ☐ Add Authorization (JWT --> validate.ts) 99% done, add uuid to payload on creation
 
     socket
         ✔ Recieve and broadcast messages @started(22-11-29 14:01) @done(22-11-29 15:58) @lasted(1h57m59s)
@@ -51,6 +51,11 @@ App
 
 
         ☐ Add MemberList component
+          ☐ Member
+            ☐ Activity status dot
+            ✔ Alt avatar @done(22-12-31 15:02)
+            ☐ show user profile onClick
+
         ☐ handle current channel members and name changes over socket
 
         subscriptionOverview/simpleOverview Signal,
