@@ -10,7 +10,7 @@ const pinger = {
     }, 1000);
 
     on("pong", (data) => {
-      ms.set(data.time - this.timeSent);
+      ms.set(Date.now() - this.timeSent);
     });
   },
   stop() {
