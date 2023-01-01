@@ -70,6 +70,10 @@ export function handleUpgrade(req: Request): Response {
       switch (incomingMessage.type) {
         case "connect":
           {
+            if (!incomingMessage.data.token) {
+              socket.close(1000, "Invalid token");
+              return;
+            }
             const tokenPayload = await isAuthorised(incomingMessage.data.token);
 
             if (!tokenPayload) {
@@ -92,8 +96,10 @@ export function handleUpgrade(req: Request): Response {
               parsed = [];
             }
 
+            const updatedSessionSockets: string[] = [...parsed, socket.id];
+
             dbQuery(db).table("users").update({
-              sessionSockets: JSON.stringify([...parsed, socket.id]),
+              sessionSockets: JSON.stringify(updatedSessionSockets),
             }, {
               where: { uuid: tokenPayload.uuid as string },
             });
@@ -183,7 +189,14 @@ export function handleUpgrade(req: Request): Response {
   };
   socket.onerror = (e) => console.log("socket errored:", e);
   socket.onclose = () => {
+    console.log(
+      `Socket Closed %c${socket.id} OWNER ${socket.owner}`,
+      "color:#f00",
+    );
+
     connectedSockets.delete(socket.id);
+
+    if (!socket.owner) return;
 
     //TODO: v MAKE FUNCTION
     const currentSessionSockets = dbQuery(db).table("users").read({
@@ -198,18 +211,16 @@ export function handleUpgrade(req: Request): Response {
       parsed = [];
     }
 
+    const updatedSessionSockets: string[] = parsed.filter((id: string) => {
+      return id !== socket.id;
+    });
+
     dbQuery(db).table("users").update({
-      sessionSockets: JSON.stringify(parsed.filter((id) => {
-        return id !== socket.id;
-      })),
+      sessionSockets: JSON.stringify(updatedSessionSockets),
     }, {
       where: { uuid: socket.owner as string },
     });
     //TODO: ^ MAKE FUNCTION
-    console.log(
-      `Socket Closed %c${socket.id} OWNER ${socket.owner}`,
-      "color:#f00",
-    );
   };
   return response;
 }
