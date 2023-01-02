@@ -1,9 +1,11 @@
 import { PlusCircle, Gift, Sticker, Smile, HelpCircle, Inbox, Users, UserPlus, Pin, Video, PhoneCall, User, Phone, Home } from "lucide-solid";
-
-import { json, parseCookie, useServerContext } from "solid-start";
 import server$ from "solid-start/server";
 
-import { Component, onMount, createSignal, createEffect, onCleanup } from "solid-js";
+import { buildSignal } from "~/utils/signals";
+
+import { json, parseCookie, useServerContext } from "solid-start";
+
+import { Component, onMount, createSignal, createEffect, onCleanup, onError } from "solid-js";
 import { isServer } from "solid-js/web";
 import { A, useLocation } from "@solidjs/router";
 
@@ -12,11 +14,10 @@ import Message from "~/components/Message";
 import ChannelTitle from "~/components/ChannelTitle";
 import ConnectionInfo from "~/components/ConnectionInfo";
 import ChannelList from "~/components/ChannelList";
-
-import { buildSignal } from "~/utils/signals";
 import Member from "~/components/Member";
+import AuthForm from "~/components/AuthForm";
 
-const API_URL = "http://127.0.0.1:8080";
+export const API_URL = "http://127.0.0.1:8080";
 
 const App: Component = () => {
   // const [state, setState] = createSignal({ channelCollection: [], channel: {}, userData: {} }, { equals: false });
@@ -34,6 +35,7 @@ const App: Component = () => {
     }),
     channel: createSignal<undefined | Channel>(undefined),
     activeChannel: createSignal<string>(""),
+    displayAuthForm: createSignal<boolean>(false),
   };
   // const [activeMessages, setActiveMessages] = createSignal([]);
 
@@ -50,6 +52,46 @@ const App: Component = () => {
   let msgElem: HTMLInputElement;
   const websocket = clientSocket;
   onMount(() => {
+    //isRouting
+    createEffect(async () => {
+      const getUserChannelData = server$(async (path: string, token: string) => {
+        const headers = new Headers();
+        headers.set("cookie", `discoToken=${token}`);
+
+        try {
+          const apiRes = await fetch(path, {
+            headers,
+          });
+          const { status, statusText } = apiRes;
+          if (!apiRes.ok) throw new Error(JSON.stringify({ status, statusText }));
+
+          const json = await apiRes.json();
+          console.log(json); // {requestedPaths: string[], userData: {name, friendcode, avatar}, channelCollection: channel{name:""}[], channel: {name, members[], messages[]}}
+          return json;
+        } catch (error) {
+          const message = JSON.parse(error.message);
+          return { path, error: message };
+        }
+      });
+
+      const path = useLocation().pathname;
+      const data = await getUserChannelData(API_URL + path, cookie().discoToken);
+
+      const { channelCollection, channel, requestedPaths, error } = data;
+
+      if (error) {
+        console.log("Error fetching route data:", data);
+        error.status === 403 ? state.displayAuthForm[1](true) : null;
+        return;
+      }
+
+      state.channelCollection.set(channelCollection);
+      state.channel[1](channel);
+      state.activeChannel[1](requestedPaths.join("/"));
+
+      console.log("%cGot the following channel data:", "color: #0f0", data);
+    });
+
     websocket.init(`${location.origin.replace("http", "ws").replace("3000", "8080")}`, cookie().discoToken);
 
     websocket.on("chat", (data) => {
@@ -60,42 +102,6 @@ const App: Component = () => {
           return { ...prev, messages: prev.messages.concat(data) };
         });
       }
-    });
-
-    //isRouting
-    createEffect(async () => {
-      const res = server$(async (path: string, token: string) => {
-        // console.log(
-        //   `
-        //   Client is requesting the following channel: ${path}
-        //   As: ${JSON.stringify(user)}
-        //   `
-        // );
-
-        const headers = new Headers();
-        headers.set("cookie", `discoToken=${token}`);
-
-        try {
-          const apiRes = await fetch(API_URL + path, {
-            headers,
-          });
-          const json = await apiRes.json();
-          console.log(json); // {requestedPaths: string[], userData: {name, friendcode, avatar}, channelCollection: channel{name:""}[], channel: {name, members[], messages[]}}
-          return json;
-        } catch (error) {
-          return { path, error };
-        }
-      });
-      const path = useLocation().pathname;
-      const data = await res(path, cookie().discoToken);
-
-      const { channelCollection, channel, requestedPaths } = data;
-
-      state.channelCollection.set(channelCollection);
-      state.channel[1](channel);
-      state.activeChannel[1](requestedPaths.join("/"));
-
-      console.log("%cGot the following channel data:", "color: #0f0", data);
     });
 
     //phase
@@ -132,6 +138,9 @@ const App: Component = () => {
     onCleanup(() => {
       websocket.close();
     });
+    onError(() => {
+      websocket.close();
+    });
   });
 
   const msgSubmit = (event: SubmitEvent) => {
@@ -153,7 +162,8 @@ const App: Component = () => {
   };
 
   return (
-    <>
+    <div id="App" class="relative">
+      {state.displayAuthForm[0]() ? <AuthForm /> : null}
       <div class="flex h-screen dark:bg-dc-serverbar-bg-dark text-dc-sidebar-text-dark">
         <nav class="w-[72px] flex-none flex flex-col gap-2 py-2">
           <A href="/app/@me" class="mx-3 rounded-full w-12 h-12 flex items-center p-0.5 relative z-10 overflow-hidden bg-dc-foreground-bg-dark text-white" activeClass="channel-collection-selected">
@@ -262,7 +272,7 @@ const App: Component = () => {
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 };
 
