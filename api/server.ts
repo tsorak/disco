@@ -6,6 +6,7 @@ const db = await initDB();
 //USERS
 dbQuery(db).table("users").create({
   uuid: "1",
+  email: "fool@disco.com",
   name: "Mr Fool",
   password: "3",
   subscriptions: JSON.stringify(["0", "1", "2"]),
@@ -14,6 +15,7 @@ dbQuery(db).table("users").create({
 } as UserRow);
 dbQuery(db).table("users").create({
   uuid: "2",
+  email: "barr@disco.com",
   name: "Mr Barr",
   password: "3",
   subscriptions: JSON.stringify(["0", "2"]),
@@ -22,6 +24,7 @@ dbQuery(db).table("users").create({
 } as UserRow);
 dbQuery(db).table("users").create({
   uuid: "3",
+  email: "bazz@disco.com",
   name: "Mr Bazz",
   password: "3",
   subscriptions: JSON.stringify(["1", "2"]),

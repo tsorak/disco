@@ -8,6 +8,7 @@ import {
 } from "./db.ts";
 import { create, isAuthorised } from "./authorisation.ts";
 import { Cookie } from "https://deno.land/x/another_cookiejar@v5.0.1/mod.ts";
+import * as bcrypt from "https://deno.land/x/bcrypt@v0.4.1/mod.ts";
 
 function readChannel(channelID: string, requester: UserRow["uuid"]) {
   if (!channelID) return;
@@ -109,41 +110,6 @@ const appHandler = async (req: Request) => {
 
   switch (req.method) {
     case "GET": {
-      // if (channelPath[0] === "@me") {
-      //   //TODO: make this readable...
-      //   const dms = (dbQuery(db).table("channels").read({
-      //     where: { parent: null },
-      //   }) as unknown) as ChannelRow[];
-      //   const userDms = (dms.filter((row: ChannelRow) => {
-      //     const parsed = JSON.parse(row.subscribers) as string[];
-      //     return parsed.includes(uuid);
-      //   }).map((dm) => {
-      //     const subscribers = JSON.parse(dm.subscribers) as string[];
-      //     const name = subscribers.filter(
-      //       (subscriberUUID) => subscriberUUID !== uuid,
-      //     ).map((subscriber: UserRow["uuid"]) => {
-      //       const user = dbQuery(db).table("users").read({
-      //         column: "name",
-      //         where: { uuid: subscriber },
-      //       })[0];
-      //       return user.name;
-      //     }).join(", ");
-      //     return { name, avatar: "", path: `@me/${dm.uuid}` };
-      //   }) as unknown) as { name: string; avatar: string; path: string }[];
-
-      //   channelCollection = userDms;
-      // } else if (channelPath[0] != undefined) {
-      //   //TODO: return subchannels for the requested DiscoServer
-
-      //   // const user = dbQuery(db).table("users").read({
-      //   //   where: { uuid },
-      //   //   limit: 1,
-      //   // })[0];
-
-      //   // const userSubscriptions: string[] = (typeof user.subscriptions === "string" &&
-      //   //   JSON.parse(user.subscriptions)) ?? [];
-      // }
-
       channelCollection = readChannelCollection(channelPath[0], uuid);
       channel = readChannel(channelPath[1], uuid);
 
@@ -166,7 +132,17 @@ const appHandler = async (req: Request) => {
 };
 
 const authHandler = async (req: Request) => {
-  //TODO: /verify /refresh instead of req.method?
+  const createTokenCookie = async (payload: { userID: string }) => {
+    const userID = payload.userID;
+
+    const cookie = Cookie.from(
+      `discoToken=${await create({ uuid: userID })};`,
+    );
+    cookie.expires = Date.now() + 1000 * 60 * 60 * 2;
+    cookie.path = "/";
+
+    return cookie;
+  };
 
   switch (req.method) {
     case "GET": {
@@ -177,22 +153,92 @@ const authHandler = async (req: Request) => {
         return new Response("Not authorized", { status: 403 });
       }
     }
+    // case "POST": {
+    //   const cookie = Cookie.from(
+    //     `discoToken=${await create({ uuid: "1" })};`,
+    //   );
+
+    //   cookie.expires = Date.now() + 1000 * 60 * 60 * 2;
+    //   cookie.path = "/";
+    //   console.log(cookie.toString());
+
+    //   const headers = new Headers();
+    //   headers.set("Set-Cookie", cookie.toString());
+    //   headers.set("Access-Control-Allow-Origin", "*");
+
+    //   return new Response("Token set", {
+    //     status: 200,
+    //     headers,
+    //   });
+    // }
     case "POST": {
-      const cookie = Cookie.from(
-        `discoToken=${await create({ uuid: "1" })};`,
-      );
+      let payload;
+      try {
+        payload = await req.json();
+      } catch (error) {
+        return new Response(null, { status: 400 });
+      }
+      const { email, password } = payload;
+      if (!email || !password) return new Response(null, { status: 400 });
 
-      cookie.expires = Date.now() + 1000 * 60 * 60 * 2;
-      cookie.path = "/";
-      console.log(cookie.toString());
+      // bcrypt
+      const hashedPassword = await bcrypt.hash(password);
+      let queryRes;
+      try {
+        queryRes = dbQuery(db).table("users").create(
+          {
+            uuid: crypto.randomUUID(),
+            email,
+            name: "DiscoUser",
+            password: hashedPassword,
+            sessionSockets: JSON.stringify([]),
+            subscriptions: JSON.stringify([]),
+            token: "",
+          } as UserRow,
+        )![0] as unknown as UserRow;
+      } catch (error) {
+        return new Response(null, { status: 400 });
+      }
+      console.log("User created:", queryRes);
 
-      const headers = new Headers();
-      headers.set("Set-Cookie", cookie.toString());
-      headers.set("Access-Control-Allow-Origin", "*");
+      const cookie = await createTokenCookie({ userID: queryRes.uuid });
 
-      return new Response("Token set", {
+      return new Response(null, {
         status: 200,
-        headers,
+        headers: { "set-cookie": cookie.toString() },
+      });
+    }
+    case "PUT": {
+      let payload;
+      try {
+        payload = await req.json();
+      } catch (error) {
+        return new Response(null, { status: 400 });
+      }
+      const { email, password } = payload;
+      if (!email || !password) return new Response(null, { status: 400 });
+
+      // bcrypt
+      let queryRes;
+      try {
+        queryRes = dbQuery(db).table("users").read({
+          where: { email },
+        })[0] as unknown as UserRow;
+      } catch (error) {
+        return new Response(null, { status: 400 });
+      }
+      if (!queryRes) return new Response(null, { status: 400 });
+      console.log("User found:", queryRes);
+
+      const correctPassword = await bcrypt.compare(password, queryRes.password);
+
+      if (!correctPassword) return new Response(null, { status: 400 });
+
+      const cookie = await createTokenCookie({ userID: queryRes.uuid });
+
+      return new Response(null, {
+        status: 200,
+        headers: { "set-cookie": cookie.toString() },
       });
     }
     case "OPTIONS": {

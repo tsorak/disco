@@ -13,8 +13,8 @@ const AuthForm: Component<{}> = (props) => {
     const authType = form.get("disco_authType") as "LOGIN" | "SIGNUP";
 
     console.log(email, password, authType);
-    const resp = await fetch(API_URL + "/" + authType.toLowerCase(), {
-      method: "POST",
+    const resp = await fetch(API_URL + "/auth", {
+      method: authType === "SIGNUP" ? "POST" : "PUT",
       body: JSON.stringify({ email, password }),
     });
 

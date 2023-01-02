@@ -3,6 +3,7 @@ interface DiscoRow {
   uuid: string;
 }
 interface UserRow extends DiscoRow {
+  email: string;
   name: string;
   password: string;
   subscriptions: string;
@@ -102,6 +103,7 @@ const dbQuery = (db: DB) => {
           function isUserRow(row: PossibleRowTypes): row is UserRow {
             return [
               "uuid",
+              "email",
               "name",
               "password",
               "subscriptions",
@@ -136,7 +138,7 @@ const dbQuery = (db: DB) => {
           if (isUserRow(data) && name === "users") {
             const userRow = data as UserRow;
             return sendQuery(
-              `INSERT INTO ${name} VALUES('${userRow.uuid}','${userRow.name}','${userRow.password}','${userRow.subscriptions}','${userRow.token}','${userRow.sessionSockets}') RETURNING *`,
+              `INSERT INTO ${name} VALUES('${userRow.uuid}','${userRow.email}','${userRow.name}','${userRow.password}','${userRow.subscriptions}','${userRow.token}','${userRow.sessionSockets}') RETURNING *`,
             );
           } else if (isChannelRow(data) && name === "channels") {
             const channelRow = data as ChannelRow;
@@ -239,6 +241,7 @@ const initDB = async (name = "database"): Promise<DB> => {
   database.execute(`
     CREATE TABLE IF NOT EXISTS users (
       uuid TEXT PRIMARY KEY NOT NULL,
+      email TEXT NOT NULL,
       name TEXT NOT NULL,
       password TEXT NOT NULL,
       subscriptions TEXT NOT NULL,
