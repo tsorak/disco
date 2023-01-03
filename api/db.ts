@@ -152,7 +152,7 @@ const dbQuery = (db: DB) => {
           } else if (isMessageRow(data) && name === "messages") {
             const messageRow = data as MessageRow;
             return sendQuery(
-              `INSERT INTO ${name} VALUES('${messageRow.uuid}',(SELECT uuid FROM users WHERE uuid=${messageRow.sender} LIMIT 1),(SELECT uuid FROM channels WHERE uuid=${messageRow.reciever} LIMIT 1),'${messageRow.content}') RETURNING *`,
+              `INSERT INTO ${name} VALUES('${messageRow.uuid}',(SELECT uuid FROM users WHERE uuid='${messageRow.sender}' LIMIT 1),(SELECT uuid FROM channels WHERE uuid='${messageRow.reciever}' LIMIT 1),'${messageRow.content}') RETURNING *`,
             );
           } else {
             return undefined;

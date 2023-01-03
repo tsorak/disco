@@ -63,14 +63,14 @@ const App: Component = () => {
             headers,
           });
           const { status, statusText } = apiRes;
-          if (!apiRes.ok) throw new Error(JSON.stringify({ status, statusText }));
+          if (!apiRes.ok) return { path, error: { status, statusText } };
 
           const json = await apiRes.json();
           console.log(json); // {requestedPaths: string[], userData: {name, friendcode, avatar}, channelCollection: channel{name:""}[], channel: {name, members[], messages[]}}
           return json;
         } catch (error) {
-          const message = JSON.parse(error.message);
-          return { path, error: message };
+          //.json() failed?
+          return { path, error: error };
         }
       });
 

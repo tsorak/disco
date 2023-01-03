@@ -25,6 +25,7 @@ function readChannel(channelID: string, requester: UserRow["uuid"]) {
 
   if (!requestedChannelSubscribers.includes(requester)) {
     //user is not part of the channels subscribers
+    console.log("User is not apart of the channels subscribers.");
     return;
   } else {
     const channelMessages = (dbQuery(db).table("messages").read({
@@ -192,7 +193,7 @@ const authHandler = async (req: Request) => {
             name: "DiscoUser",
             password: hashedPassword,
             sessionSockets: JSON.stringify([]),
-            subscriptions: JSON.stringify([]),
+            subscriptions: JSON.stringify(["0"]),
             token: "",
           } as UserRow,
         )![0] as unknown as UserRow;
@@ -200,6 +201,22 @@ const authHandler = async (req: Request) => {
         return new Response(null, { status: 400 });
       }
       console.log("User created:", queryRes);
+
+      // TODO: function userSubscribeTo(channelID: string)
+      const supportChannelSubscribers = dbQuery(db).table("channels").read({
+        where: { uuid: "0" },
+        column: "subscribers",
+      })[0] as unknown as { subscribers: ChannelRow["subscribers"] };
+
+      const parsed = JSON.parse(
+        supportChannelSubscribers.subscribers,
+      ) as string[];
+      parsed.push(queryRes.uuid);
+
+      dbQuery(db).table("channels").update({
+        subscribers: JSON.stringify(parsed),
+      }, { where: { uuid: "0" } });
+      // TODO: ^
 
       const cookie = await createTokenCookie({ userID: queryRes.uuid });
 
