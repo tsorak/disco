@@ -1,12 +1,14 @@
 *
-    ☐ add timestamps to messages
+    ☐ Add timestamps to messages
+    ☐ Add friends system
+    ☐ Add servers (as channelCollections)
 
 API
     Database (db.ts)
         Add SQL queries
           ✔ CREATE @done(22-12-28 14:13)
           ✔ READ @done(22-12-28 14:13)
-          ☐ UPDATE
+          ✔ UPDATE @done(23-01-03 14:47)
           ☐ DELETE
         ✔ Add database adapter/interface @done(22-12-28 14:13) (dbQuery)
 
@@ -19,9 +21,9 @@ API
 
         ☐ if no channel name is set during creation, set name to each subscribers name sepparated by comma.
     
-    ☐ Add Authentication
+    ✔ Add Authentication @done(23-01-03 14:47)
 
-    ☐ Add Authorization (JWT --> validate.ts) 99% done, add uuid to payload on creation
+    ✔ Add Authorization (JWT --> validate.ts) 99% done, add uuid to payload on creation @done(23-01-03 14:47)
 
     socket
         ✔ Recieve and broadcast messages @started(22-11-29 14:01) @done(22-11-29 15:58) @lasted(1h57m59s)
@@ -50,7 +52,7 @@ App
         ☐ implement websocket module 99%
 
 
-        ☐ Add MemberList component
+        ✔ Add MemberList component @done(23-01-03 14:47)
           ☐ Member
             ☐ Activity status dot
             ✔ Alt avatar @done(22-12-31 15:02)
