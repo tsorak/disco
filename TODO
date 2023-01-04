@@ -58,7 +58,7 @@ App
             ✔ Alt avatar @done(22-12-31 15:02)
             ☐ show user profile onClick
 
-        ☐ handle current channel members and name changes over socket
+        ☐ handle current channel members and name changes over socket !!!
 
         subscriptionOverview/simpleOverview Signal,
           (on isRouting and socket message event)

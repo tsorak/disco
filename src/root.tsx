@@ -18,8 +18,8 @@ export default function Root() {
           <ErrorBoundary>
             <Routes>
               <Route path="/" component={() => <Navigate href="/app" />} />
-              <Route path="/login" component={() => <h1>Login page</h1>} />
-              <Route path="/register" component={() => <h1>Signup page</h1>} />
+              {/* <Route path="/login" component={() => <h1>Login page</h1>} /> */}
+              {/* <Route path="/register" component={() => <h1>Signup page</h1>} /> */}
 
               <Route path="/app/" component={() => <Navigate href="@me" />} />
               <Route path="/app/*" component={Index} />

@@ -28,6 +28,7 @@ const App: Component = () => {
   };
 
   const state = {
+    // [accessor, {mutate, refetch}] = createResource(FETCHERFUNCTION)
     channelCollection: buildSignal([], {
       // equals(prev: [], next: []) {
       //   return prev.length === (next?.length ?? 0);
