@@ -21,6 +21,8 @@ API
 
         ☐ if no channel name is set during creation, set name to each subscribers name sepparated by comma.
     
+    ☐ Add salt
+        
     ✔ Add Authentication @done(23-01-03 14:47)
 
     ✔ Add Authorization (JWT --> validate.ts) 99% done, add uuid to payload on creation @done(23-01-03 14:47)

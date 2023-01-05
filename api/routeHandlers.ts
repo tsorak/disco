@@ -247,7 +247,7 @@ const authHandler = async (req: Request) => {
       if (!queryRes) return new Response(null, { status: 400 });
       console.log("User found:", queryRes);
 
-      const correctPassword = await bcrypt.compare(password, queryRes.password);
+      const correctPassword = bcrypt.compareSync(password, queryRes.password);
 
       if (!correctPassword) return new Response(null, { status: 400 });
 
