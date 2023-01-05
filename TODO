@@ -56,7 +56,14 @@ App
           ☐ Member
             ☐ Activity status dot
             ✔ Alt avatar @done(22-12-31 15:02)
-            ☐ show user profile onClick
+            ☐ show user profile onClick (MemberProfile)
+              ☐ createResource
+              ☐ api handler
+        
+        ✔ Add MessageList component @done(23-01-05 21:53)
+
+        ☐ Update ChannelTitle with current channels name
+
 
         ☐ handle current channel members and name changes over socket !!!
 

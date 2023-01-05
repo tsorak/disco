@@ -14,17 +14,23 @@ import Message from "~/components/Message";
 import ChannelTitle from "~/components/ChannelTitle";
 import ConnectionInfo from "~/components/ConnectionInfo";
 import ChannelList from "~/components/ChannelList";
-import Member from "~/components/Member";
 import AuthForm from "~/components/AuthForm";
+import MemberList from "~/components/MemberList";
+import MessageList from "~/components/MessageList";
 
 export const API_URL = "http://127.0.0.1:8080";
 
 const App: Component = () => {
   // const [state, setState] = createSignal({ channelCollection: [], channel: {}, userData: {} }, { equals: false });
+  type ChannelMember = {
+    uuid: string;
+    name: string;
+    avatar?: string;
+  };
   type Channel = {
     name: string;
     messages: any[];
-    members: any[];
+    members: ChannelMember[];
   };
 
   const state = {
@@ -34,7 +40,11 @@ const App: Component = () => {
       //   return prev.length === (next?.length ?? 0);
       // },
     }),
-    channel: createSignal<undefined | Channel>(undefined),
+    channel: {
+      name: createSignal<Channel["name"] | undefined>(undefined),
+      messages: createSignal<Channel["messages"] | undefined>(undefined),
+      members: createSignal<Channel["members"] | undefined>(undefined, { equals: false }),
+    },
     activeChannel: createSignal<string>(""),
     displayAuthForm: createSignal<boolean>(false),
   };
@@ -87,7 +97,10 @@ const App: Component = () => {
       }
 
       state.channelCollection.set(channelCollection);
-      state.channel[1](channel);
+      state.channel.name[1](channel?.name);
+      state.channel.messages[1](channel?.messages);
+      state.channel.members[1](channel?.members);
+
       state.activeChannel[1](requestedPaths.join("/"));
 
       console.log("%cGot the following channel data:", "color: #0f0", data);
@@ -99,10 +112,11 @@ const App: Component = () => {
       console.log("Incoming msg:", data);
       // setActiveMessages([...activeMessages(), data]);
       if (data.reciever === state.activeChannel[0]().split("/")[1]) {
-        state.channel[1]((prev) => {
-          return { ...prev, messages: prev.messages.concat(data) };
+        state.channel.messages[1]((prev) => {
+          //TODO:
+          return [...prev, data];
         });
-      }
+      } //TODO: Else notification bubble
     });
 
     //phase
@@ -117,8 +131,22 @@ const App: Component = () => {
 
     createEffect(() => {
       console.log("%cchannel:", "background: #ff0");
-      console.log(state.channel[0]());
+      const channel = { name: state.channel.name[0](), messages: state.channel.messages[0](), members: state.channel.members[0]() };
+      console.log(channel);
     });
+
+    // Test state.channel.members dependency refreshing
+    // setTimeout(() => {
+    //   state.channel.members[1]((prev) => {
+    //     const baj = prev;
+
+    //     baj[0].name = "New Name";
+
+    //     console.log(baj);
+
+    //     return baj;
+    //   });
+    // }, 1000);
 
     createEffect(() => {
       console.log("%cactiveChannel:", "background: #0f0");
@@ -132,7 +160,7 @@ const App: Component = () => {
 
     //Autoscroll
     createEffect(() => {
-      state.channel[0]()?.messages.length;
+      state.channel.messages[0]()?.length;
       scrollDiv.scrollTop = scrollDiv.scrollHeight - scrollDiv.clientHeight;
     });
 
@@ -225,9 +253,7 @@ const App: Component = () => {
                 <main class="chat flex-grow h-0 overflow-hidden">
                   <div class="scrollContent h-full overflow-y-auto" ref={scrollDiv}>
                     <ol class="list-none flex flex-col break-all">
-                      {/* <Message id={"1"} sender={{ id: undefined, name: undefined }} reactions={[{ emote: "😐", count: 1 }]} date={undefined} content={"Hello World!"} />
-                      <Message content={"Hello World!"} /> */}
-                      {state.channel[0]() ? state.channel[0]().messages.map((chatEntry) => <Message content={chatEntry.content} sender={{ name: state.channel[0]().members.find((member) => member.uuid === chatEntry.sender).name }} />) : null}
+                      <MessageList membersAccessor={state.channel.members[0]} messagesAccessor={state.channel.messages[0]} />
                       <div class="spacer h-6"></div>
                     </ol>
                   </div>
@@ -262,12 +288,7 @@ const App: Component = () => {
                 </form>
               </div>
               <div class="members w-60 dark:bg-dc-sidebar-bg-dark flex-none flex flex-col py-2 gap-1">
-                {state.channel[0]() ? <p class="mx-4 mt-3 text-xs font-semibold select-none">MEMBERS - {state.channel[0]()?.members.length}</p> : null}
-                {state.channel[0]()
-                  ? state.channel[0]().members.map((member) => {
-                      return <Member {...member} />;
-                    })
-                  : null}
+                <MemberList membersAccessor={state.channel.members[0]} />
               </div>
             </div>
           </div>
