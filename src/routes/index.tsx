@@ -1,4 +1,4 @@
-import { PlusCircle, Gift, Sticker, Smile, HelpCircle, Inbox, Users, UserPlus, Pin, Video, PhoneCall, User, Phone, Home } from "lucide-solid";
+import { PlusCircle, Gift, Sticker, Smile, HelpCircle, Inbox, Users, UserPlus, Pin, Video, PhoneCall, User, Phone, Home, Cog, Headphones, Mic } from "lucide-solid";
 import server$ from "solid-start/server";
 
 import { buildSignal } from "~/utils/signals";
@@ -16,6 +16,7 @@ import ChannelList from "~/components/ChannelList";
 import AuthForm from "~/components/AuthForm";
 import MemberList from "~/components/MemberList";
 import MessageList from "~/components/MessageList";
+import UserProfileMin from "~/components/UserProfileMin";
 
 import { tUserData } from "~/utils/types";
 
@@ -224,7 +225,20 @@ const App: Component = () => {
             </nav>
             <section class="panels">
               <ConnectionInfo connectionState={websocket.phase.get} ms={websocket.ms.get} reconnect={() => websocket.connect.bind(websocket)("", cookie().discoToken)} closeReason={websocket.closeReason.get} />
-              <div class="profile h-[52px] dark:bg-dc-profile-bg-dark"></div>
+              <div class="profile h-[52px] dark:bg-dc-profile-bg-dark flex justify-between items-center p-1.5">
+                <UserProfileMin getUserData={state.userData[0]} />
+                <div class="flex">
+                  <button class="grayEmoji p-1.5 transition-colors hover:bg-[#fff1] rounded-md">
+                    <Mic size={"1.3rem"} />
+                  </button>
+                  <button class="grayEmoji p-1.5 transition-colors hover:bg-[#fff1] rounded-md">
+                    <Headphones size={"1.3rem"} />
+                  </button>
+                  <button class="grayEmoji p-1.5 transition-colors hover:bg-[#fff1] rounded-md">
+                    <Cog size={"1.3rem"} />
+                  </button>
+                </div>
+              </div>
             </section>
           </div>
           <div class="content dark:bg-dc-foreground-bg-dark flex-grow flex flex-col">
