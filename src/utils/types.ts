@@ -11,4 +11,10 @@ type tMember = {
   avatar?: string;
 };
 
-export type { tMember, tMessage };
+type tUserData = {
+  uuid: string;
+  name: string;
+  email: string;
+};
+
+export type { tMember, tMessage, tUserData };

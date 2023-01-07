@@ -94,6 +94,15 @@ function readChannelCollection(
   const channelCollection: ChannelData[] | undefined = simplifiedChannels;
   return channelCollection;
 }
+function readUserData(
+  userID: string,
+): { uuid: string; name: string; email: string } {
+  const { uuid, name, email } = dbQuery(db).table("users").read({
+    where: { uuid: userID },
+  })[0] as unknown as UserRow;
+
+  return { uuid, name, email };
+}
 
 const appHandler = async (req: Request) => {
   const channelPath = new URL(req.url).pathname.split("/")
@@ -107,18 +116,18 @@ const appHandler = async (req: Request) => {
     return new Response(null, { status: 500 });
   }
 
-  let channelCollection, channel;
-
   switch (req.method) {
     case "GET": {
-      channelCollection = readChannelCollection(channelPath[0], uuid);
-      channel = readChannel(channelPath[1], uuid);
+      const channelCollection = readChannelCollection(channelPath[0], uuid);
+      const channel = readChannel(channelPath[1], uuid);
+      const userData = readUserData(uuid);
 
       return new Response(
         JSON.stringify({
           requestedPaths: channelPath,
           channelCollection,
           channel,
+          userData,
         }),
         {
           status: 200,
@@ -220,7 +229,13 @@ const authHandler = async (req: Request) => {
 
       const cookie = await createTokenCookie({ userID: queryRes.uuid });
 
-      return new Response(null, {
+      const body = {
+        uuid: queryRes.uuid,
+        name: queryRes.name,
+        email: queryRes.email,
+      };
+
+      return new Response(JSON.stringify(body), {
         status: 200,
         headers: { "set-cookie": cookie.toString() },
       });

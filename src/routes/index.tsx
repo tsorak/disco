@@ -10,13 +10,14 @@ import { isServer } from "solid-js/web";
 import { A, useLocation } from "@solidjs/router";
 
 import { clientSocket } from "~/communication/websocket";
-import Message from "~/components/Message";
 import ChannelTitle from "~/components/ChannelTitle";
 import ConnectionInfo from "~/components/ConnectionInfo";
 import ChannelList from "~/components/ChannelList";
 import AuthForm from "~/components/AuthForm";
 import MemberList from "~/components/MemberList";
 import MessageList from "~/components/MessageList";
+
+import { tUserData } from "~/utils/types";
 
 export const API_URL = "http://127.0.0.1:8080";
 
@@ -45,6 +46,7 @@ const App: Component = () => {
       messages: createSignal<Channel["messages"] | undefined>(undefined),
       members: createSignal<Channel["members"] | undefined>(undefined, { equals: false }),
     },
+    userData: createSignal<tUserData>(undefined),
     activeChannel: createSignal<string>(""),
     displayAuthForm: createSignal<boolean>(false),
   };
@@ -88,7 +90,7 @@ const App: Component = () => {
       const path = useLocation().pathname;
       const data = await getUserChannelData(API_URL + path, cookie().discoToken);
 
-      const { channelCollection, channel, requestedPaths, error } = data;
+      const { channelCollection, channel, userData, requestedPaths, error } = data;
 
       if (error) {
         console.log("Error fetching route data:", data);
@@ -100,6 +102,7 @@ const App: Component = () => {
       state.channel.name[1](channel?.name);
       state.channel.messages[1](channel?.messages);
       state.channel.members[1](channel?.members);
+      state.userData[1](userData);
 
       state.activeChannel[1](requestedPaths.join("/"));
 
@@ -133,6 +136,11 @@ const App: Component = () => {
       console.log("%cchannel:", "background: #ff0");
       const channel = { name: state.channel.name[0](), messages: state.channel.messages[0](), members: state.channel.members[0]() };
       console.log(channel);
+    });
+
+    createEffect(() => {
+      console.log("%cuserData:", "background: #f0f");
+      console.log(state.userData[0]());
     });
 
     // Test state.channel.members dependency refreshing
