@@ -17,6 +17,7 @@ import AuthForm from "~/components/AuthForm";
 import MemberList from "~/components/MemberList";
 import MessageList from "~/components/MessageList";
 import UserProfileMin from "~/components/UserProfileMin";
+import { Overlay } from "~/components/Overlay";
 
 import { tUserData } from "~/utils/types";
 
@@ -199,8 +200,10 @@ const App: Component = () => {
     msgElem.value = null;
   };
 
+  //TODO: make AuthForm apart of Overlay
   return (
     <div id="App" class="relative">
+      <Overlay state={state} />
       {state.displayAuthForm[0]() ? <AuthForm /> : null}
       <div class="flex h-screen dark:bg-dc-serverbar-bg-dark text-dc-sidebar-text-dark">
         <nav class="w-[72px] flex-none flex flex-col gap-2 py-2">

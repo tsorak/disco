@@ -1,6 +1,8 @@
 import { Accessor, Component, createEffect, createSignal, onCleanup, onError, Show } from "solid-js";
 import DiscoAvatar from "./DiscoAvatar";
 
+import { setActiveOverlay } from "./Overlay";
+
 import type { tUserData } from "~/utils/types";
 
 const UserProfileMin: Component<{ getUserData: Accessor<tUserData> }> = (props) => {
@@ -49,9 +51,13 @@ const UserProfileMin: Component<{ getUserData: Accessor<tUserData> }> = (props) 
   onCleanup(() => scroller.stop.bind(scroller));
   onError(() => scroller.stop.bind(scroller));
 
+  function handleProfileMinClick(event: MouseEvent) {
+    setActiveOverlay("UserControls");
+  }
+
   return (
     <Show when={getUserData()} fallback={<div />}>
-      <button class="p-1 max-w-[7.5rem] flex items-center text-xs transition-colors hover:bg-[#fff1] rounded gap-1" onpointerenter={() => setShouldScroll(true)} onpointerleave={() => setShouldScroll(false)}>
+      <button onClick={handleProfileMinClick} class="p-1 max-w-[7.5rem] flex items-center text-xs transition-colors hover:bg-[#fff1] rounded gap-1" onpointerenter={() => setShouldScroll(true)} onpointerleave={() => setShouldScroll(false)}>
         <div>
           <Show when={avatar} fallback={DiscoAvatar({})}>
             <img src={avatar} alt="Your profile avatar" />
