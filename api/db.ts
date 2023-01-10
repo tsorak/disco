@@ -232,6 +232,9 @@ const initDB = async (name = "database"): Promise<DB> => {
   await dropDB(`${name}.db`);
   const database = new DB(`${name}.db`);
 
+  const version = database.query(`SELECT sqlite_version()`).flat()[0];
+  console.log(`SQLite version: %c${version}`, "color: #ff0");
+
   // db.execute(`
   //   DROP TABLE IF EXISTS messages;
   //   DROP TABLE IF EXISTS users;
