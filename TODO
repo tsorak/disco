@@ -20,6 +20,9 @@ API
         ✘ Add fromUser and relatedChannel checks to dbQuery.create @cancelled(22-12-29 17:23)
 
         ☐ if no channel name is set during creation, set name to each subscribers name sepparated by comma.
+
+        ☐ Add channel_users table (remove subscribers, subscriptions columns from channels and users) (Normalise)
+          | channel | user |
     
     ☐ Add salt
         

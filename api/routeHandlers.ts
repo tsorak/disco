@@ -68,18 +68,12 @@ function readChannelCollection(
     user.subscriptions,
   ) as ChannelRow["uuid"][];
 
-  const requestersChannels: ChannelRow[] = [];
-
-  subscriptions.forEach((channelUUID: ChannelRow["uuid"]) => {
-    const channelRow = (dbQuery(db).table("channels").read({
-      where: {
-        parent: collectionID === "@me" ? null : collectionID,
-        uuid: channelUUID,
-      },
-    })[0] as unknown) as ChannelRow | undefined;
-
-    if (channelRow) requestersChannels.push(channelRow);
-  });
+  const requestersChannels = dbQuery(db).table("channels").read({
+    where: {
+      parent: collectionID === "@me" ? null : collectionID,
+      uuid: subscriptions,
+    },
+  }) as unknown[] as ChannelRow[];
 
   const simplifiedChannels: ChannelData[] = requestersChannels.map(
     (channelRow) => {
