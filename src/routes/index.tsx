@@ -1,8 +1,6 @@
 import { PlusCircle, Gift, Sticker, Smile, HelpCircle, Inbox, Users, UserPlus, Pin, Video, PhoneCall, User, Phone, Home, Cog, Headphones, Mic } from "lucide-solid";
 import server$ from "solid-start/server";
 
-import { buildSignal } from "~/utils/signals";
-
 import { json, parseCookie, useServerContext } from "solid-start";
 
 import { Component, onMount, createSignal, createEffect, onCleanup, onError } from "solid-js";
@@ -23,6 +21,11 @@ import { tUserData } from "~/utils/types";
 import { AppData } from "~/AppData";
 
 export const API_URL = "http://127.0.0.1:8080";
+
+export interface ChannelCollection {
+  path: string;
+  name: string;
+}
 
 const App: Component = () => {
   const rData = useRouteData<typeof AppData>();
@@ -51,7 +54,7 @@ const App: Component = () => {
   };
 
   const state = {
-    channelCollection: buildSignal([], {
+    channelCollection: createSignal<ChannelCollection[]>([], {
       // equals(prev: [], next: []) {
       //   return prev.length === (next?.length ?? 0);
       // },
@@ -105,7 +108,7 @@ const App: Component = () => {
       return;
     }
 
-    state.channelCollection.set(channelCollection);
+    state.channelCollection[1](channelCollection);
     state.channel.name[1](channel?.name);
     state.channel.messages[1](channel?.messages);
     state.channel.members[1](channel?.members);
@@ -136,7 +139,7 @@ const App: Component = () => {
 
   createEffect(() => {
     console.log("%cchannelCollection:", "background: #f00");
-    console.log(state.channelCollection.get());
+    console.log(state.channelCollection[0]());
   });
 
   createEffect(() => {
@@ -228,7 +231,7 @@ const App: Component = () => {
                 </button>
               </div>
               <div class="overflow-y-auto flex-grow">
-                <ChannelList channels={state.channelCollection.get} />
+                <ChannelList channels={state.channelCollection[0]} activeCollection={state.activeChannel[0]} />
               </div>
             </nav>
             <section class="panels">

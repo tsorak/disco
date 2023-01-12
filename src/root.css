@@ -29,7 +29,7 @@
   }
 
   .channel-selected {
-    @apply dark:bg-[#4f545c99] dark:text-dc-primary-text-dark !important;
+    @apply dark:bg-[#4f545c99] dark:text-dc-primary-text-dark;
   }
   .channel-collection-selected {
     background: linear-gradient(#3141db, #99e3f9, #e844fb);
