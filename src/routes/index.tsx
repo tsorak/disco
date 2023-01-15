@@ -119,7 +119,7 @@ const App: Component = () => {
     console.log("%cGot the following channel data:", "color: #0f0", data);
   });
 
-  websocket.init(`${location.origin.replace("http", "ws").replace("3000", "8080")}`, cookie().discoToken);
+  websocket.init(`${location.origin.replace("http", "ws").replace("5173", "8080")}`, cookie().discoToken);
 
   websocket.on("chat", (data) => {
     console.log("Incoming msg:", data);

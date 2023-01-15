@@ -7,8 +7,10 @@
   },
   "type": "module",
   "devDependencies": {
+    "@types/node": "^18.11.9",
     "autoprefixer": "^10.4.13",
-    "postcss": "^8.4.19",
+    "esbuild": "^0.14.54",
+    "postcss": "^8.4.21",
     "solid-start-node": "^0.2.0",
     "tailwindcss": "^3.2.4",
     "typescript": "^4.8.4",
@@ -16,13 +18,13 @@
   },
   "dependencies": {
     "@solidjs/meta": "^0.28.0",
-    "@solidjs/router": "^0.5.0",
-    "lucide-solid": "^0.103.0",
-    "solid-js": "^1.6.0",
+    "@solidjs/router": "^0.6.0",
+    "lucide-solid": "^0.105.0-alpha.9",
+    "solid-js": "^1.6.2",
     "solid-start": "^0.2.0",
     "undici": "^5.11.0"
   },
   "engines": {
-    "node": ">=16"
+    "node": ">=16.8"
   }
 }
