@@ -1,9 +1,9 @@
 // @refresh reload
 import { Suspense } from "solid-js";
 import { A, Body, ErrorBoundary, FileRoutes, Head, Html, Meta, Routes, Route, Scripts, Title, Navigate } from "solid-start";
-import { AppData } from "./AppData";
 import "./root.css";
-import App from "./routes/index";
+
+import App, { AppData } from "./routes/index";
 import Error from "./routes/[...404]";
 
 export default function Root() {

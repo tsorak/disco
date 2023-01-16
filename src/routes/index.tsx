@@ -3,7 +3,7 @@ import server$ from "solid-start/server";
 
 import { json, parseCookie, useServerContext } from "solid-start";
 
-import { Component, onMount, createSignal, createEffect, onCleanup, onError } from "solid-js";
+import { Component, onMount, createSignal, createEffect, onCleanup, onError, createResource } from "solid-js";
 import { isServer } from "solid-js/web";
 import { A, useLocation, useRouteData } from "@solidjs/router";
 
@@ -18,7 +18,6 @@ import UserProfileMin from "~/components/UserProfileMin";
 import { Overlay } from "~/components/Overlay";
 
 import { tUserData } from "~/utils/types";
-import { AppData } from "~/AppData";
 
 export const API_URL = "http://127.0.0.1:8080";
 
@@ -27,13 +26,58 @@ export interface ChannelCollection {
   name: string;
 }
 
+export function AppData() {
+  const [path, setPath] = createSignal<string>(useLocation().pathname);
+  createEffect(() => {
+    setPath(useLocation().pathname);
+  });
+  //using useLocation as the Accessor does not work reactivly
+  const [discoData] = createResource(path, async (path, c) => {
+    const cookie = document.cookie; //TODO: isServer if ssr
+
+    const proxyFetch = server$(async (url: string, cookie: string) => {
+      console.log(`Fetching '${url}' using '${cookie}'`);
+
+      let res;
+      try {
+        res = await fetch(url, {
+          headers: {
+            cookie,
+          },
+        });
+        if (res.status >= 400) {
+          throw new Error(res.statusText ?? "ERROR");
+        }
+        return await res.json();
+      } catch (error) {
+        return { status: await res?.status, error: error.message };
+      }
+    });
+
+    return await proxyFetch("http://localhost:8080" + path, cookie);
+  });
+
+  return [discoData];
+}
+
 const App: Component = () => {
   const rData = useRouteData<typeof AppData>();
-  const [helloWorld] = rData;
+  const [discoData] = rData;
 
   createEffect(() => {
-    if (!helloWorld.loading) {
-      console.error(helloWorld());
+    if (!discoData.loading) {
+      console.error(discoData());
+
+      const { channelCollection, channel, userData, requestedPaths, status } = discoData();
+
+      state.channelCollection[1](channelCollection);
+      state.channel.name[1](channel?.name);
+      state.channel.messages[1](channel?.messages);
+      state.channel.members[1](channel?.members);
+      state.userData[1](userData);
+      state.activeChannel[1](requestedPaths?.join("/") ?? "");
+
+      state.displayAuthForm[1](status && status === 403);
     }
   });
 
@@ -74,121 +118,77 @@ const App: Component = () => {
   let scrollDiv: HTMLDivElement | undefined;
   let msgElem: HTMLInputElement;
   const websocket = clientSocket;
-  // onMount(() => {
-  //isRouting
-  createEffect(async () => {
-    const getUserChannelData = server$(async (path: string, token: string) => {
-      const headers = new Headers();
-      headers.set("cookie", `discoToken=${token}`);
+  onMount(() => {
+    websocket.init(`${location.origin.replace("http", "ws").replace("5173", "8080")}`, cookie().discoToken);
 
-      try {
-        const apiRes = await fetch(path, {
-          headers,
+    websocket.on("chat", (data) => {
+      console.log("Incoming msg:", data);
+      // setActiveMessages([...activeMessages(), data]);
+      if (data.reciever === state.activeChannel[0]().split("/")[1]) {
+        state.channel.messages[1]((prev) => {
+          //TODO:
+          return [...prev, data];
         });
-        const { status, statusText } = apiRes;
-        if (!apiRes.ok) return { path, error: { status, statusText } };
-
-        const json = await apiRes.json();
-        console.log(json); // {requestedPaths: string[], userData: {name, friendcode, avatar}, channelCollection: channel{name:""}[], channel: {name, members[], messages[]}}
-        return json;
-      } catch (error) {
-        //.json() failed?
-        return { path, error: error };
-      }
+      } //TODO: Else notification bubble
     });
 
-    const path = useLocation().pathname;
-    const data = await getUserChannelData(API_URL + path, cookie().discoToken);
+    //phase
+    createEffect(() => {
+      console.log(`[%cPHASE%c] ${websocket.phase.get()}`, "color: #0cf", "color: initial");
+    });
 
-    const { channelCollection, channel, userData, requestedPaths, error } = data;
+    createEffect(() => {
+      console.log("%cchannelCollection:", "background: #f00");
+      console.log(state.channelCollection[0]());
+    });
 
-    if (error) {
-      console.log("Error fetching route data:", data);
-      error.status === 403 ? state.displayAuthForm[1](true) : null;
-      return;
-    }
+    createEffect(() => {
+      console.log("%cchannel:", "background: #ff0");
+      const channel = { name: state.channel.name[0](), messages: state.channel.messages[0](), members: state.channel.members[0]() };
+      console.log(channel);
+    });
 
-    state.channelCollection[1](channelCollection);
-    state.channel.name[1](channel?.name);
-    state.channel.messages[1](channel?.messages);
-    state.channel.members[1](channel?.members);
-    state.userData[1](userData);
+    createEffect(() => {
+      console.log("%cuserData:", "background: #f0f");
+      console.log(state.userData[0]());
+    });
 
-    state.activeChannel[1](requestedPaths.join("/"));
+    // Test state.channel.members dependency refreshing
+    // setTimeout(() => {
+    //   state.channel.members[1]((prev) => {
+    //     const baj = prev;
 
-    console.log("%cGot the following channel data:", "color: #0f0", data);
+    //     baj[0].name = "New Name";
+
+    //     console.log(baj);
+
+    //     return baj;
+    //   });
+    // }, 1000);
+
+    createEffect(() => {
+      console.log("%cactiveChannel:", "background: #0f0");
+      console.log(state.activeChannel[0]());
+    });
+
+    //ms
+    // createEffect(() => {
+    //   console.log(websocket.ms.get());
+    // });
+
+    //Autoscroll
+    createEffect(() => {
+      state.channel.messages[0]()?.length;
+      scrollDiv.scrollTop = scrollDiv.scrollHeight - scrollDiv.clientHeight;
+    });
+
+    onCleanup(() => {
+      websocket.close();
+    });
+    onError(() => {
+      websocket.close();
+    });
   });
-
-  websocket.init(`${location.origin.replace("http", "ws").replace("5173", "8080")}`, cookie().discoToken);
-
-  websocket.on("chat", (data) => {
-    console.log("Incoming msg:", data);
-    // setActiveMessages([...activeMessages(), data]);
-    if (data.reciever === state.activeChannel[0]().split("/")[1]) {
-      state.channel.messages[1]((prev) => {
-        //TODO:
-        return [...prev, data];
-      });
-    } //TODO: Else notification bubble
-  });
-
-  //phase
-  createEffect(() => {
-    console.log(`[%cPHASE%c] ${websocket.phase.get()}`, "color: #0cf", "color: initial");
-  });
-
-  createEffect(() => {
-    console.log("%cchannelCollection:", "background: #f00");
-    console.log(state.channelCollection[0]());
-  });
-
-  createEffect(() => {
-    console.log("%cchannel:", "background: #ff0");
-    const channel = { name: state.channel.name[0](), messages: state.channel.messages[0](), members: state.channel.members[0]() };
-    console.log(channel);
-  });
-
-  createEffect(() => {
-    console.log("%cuserData:", "background: #f0f");
-    console.log(state.userData[0]());
-  });
-
-  // Test state.channel.members dependency refreshing
-  // setTimeout(() => {
-  //   state.channel.members[1]((prev) => {
-  //     const baj = prev;
-
-  //     baj[0].name = "New Name";
-
-  //     console.log(baj);
-
-  //     return baj;
-  //   });
-  // }, 1000);
-
-  createEffect(() => {
-    console.log("%cactiveChannel:", "background: #0f0");
-    console.log(state.activeChannel[0]());
-  });
-
-  //ms
-  // createEffect(() => {
-  //   console.log(websocket.ms.get());
-  // });
-
-  //Autoscroll
-  createEffect(() => {
-    state.channel.messages[0]()?.length;
-    scrollDiv.scrollTop = scrollDiv.scrollHeight - scrollDiv.clientHeight;
-  });
-
-  onCleanup(() => {
-    websocket.close();
-  });
-  onError(() => {
-    websocket.close();
-  });
-  // });
 
   const msgSubmit = (event: SubmitEvent) => {
     event.preventDefault();

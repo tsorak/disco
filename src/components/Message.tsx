@@ -29,8 +29,6 @@ export const Message: Component<{ uuid: string; sender: string; content: string;
 
   const getName = () => membersAccessor()?.find((member) => member.uuid === sender).name;
 
-  console.error("RENDERED");
-
   return (
     <li onclick={() => console.log(uuid)}>
       <div class="message transition-colors hover:bg-dc-msg-selected-dark px-6 mt-[2px] pb-[2px]">
