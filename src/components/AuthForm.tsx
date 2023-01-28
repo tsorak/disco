@@ -1,4 +1,4 @@
-import { useNavigate } from "@solidjs/router";
+import { refetchRouteData } from "solid-start";
 import { Loader2, Check } from "lucide-solid";
 import { Component, Show, createEffect, createSignal, JSX } from "solid-js";
 import { createServerAction$ } from "solid-start/server";
@@ -31,7 +31,7 @@ const AuthForm: Component<{}> = (props) => {
   createEffect(() => {
     if (authentication.result) {
       console.log("authentication.result", authentication.result);
-      useNavigate()("./"); //TODO: Trigger a state refetch
+      refetchRouteData("discoData");
     }
   });
 

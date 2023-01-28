@@ -6,15 +6,17 @@ import { Accessor, Component, JSX } from "solid-js";
 import { tUserData } from "~/utils/types";
 import { createServerAction$, redirect } from "solid-start/server";
 import { setActiveOverlay } from "./Overlay";
+import { refetchRouteData } from "solid-start";
 
 const UserControls: Component<{ getUserData: Accessor<tUserData> }> = (props) => {
   const { getUserData } = props;
 
-  const [, logout] = createServerAction$(async (_, { request }) => redirect("./", { headers: { "Set-Cookie": `discoToken=; Expires=${new Date(0).toUTCString()}; Path=/` } }), { invalidate: "discoData" });
+  const [, logout] = createServerAction$(async (_, { request }) => redirect("./", { headers: { "Set-Cookie": `discoToken=; Expires=${new Date(0).toUTCString()}; Path=/` } }));
 
-  const handleLogoutClick = (e: MouseEvent) => {
+  const handleLogoutClick = async (e: MouseEvent) => {
     setActiveOverlay("");
-    logout();
+    await logout();
+    refetchRouteData("discoData");
   };
 
   return (

@@ -1,9 +1,9 @@
 import { PlusCircle, Gift, Sticker, Smile, HelpCircle, Inbox, Users, UserPlus, Pin, Video, PhoneCall, User, Phone, Home, Cog, Headphones, Mic } from "lucide-solid";
 import server$ from "solid-start/server";
 
-import { json, parseCookie, useServerContext } from "solid-start";
+import { createRouteData, json, parseCookie, refetchRouteData, useServerContext } from "solid-start";
 
-import { Component, onMount, createSignal, createEffect, onCleanup, onError, createResource } from "solid-js";
+import { Component, onMount, createSignal, createEffect, onCleanup, onError, Resource } from "solid-js";
 import { isServer } from "solid-js/web";
 import { A, useIsRouting, useRouteData } from "@solidjs/router";
 
@@ -18,6 +18,7 @@ import UserProfileMin from "~/components/UserProfileMin";
 import { Overlay } from "~/components/Overlay";
 
 import { tUserData } from "~/utils/types";
+import { DiscoData } from "api/routeHandlers";
 
 export const API_URL = "http://127.0.0.1:8080";
 
@@ -27,49 +28,51 @@ export interface ChannelCollection {
 }
 
 export function AppData({ location }) {
-  const [path, setPath] = createSignal<string>(location.pathname);
-  createEffect(() => {
-    useIsRouting()();
-    setPath(location.pathname);
-  });
-  // using useLocation as the Accessor does not work reactivly
-  const [discoData] = createResource(path, async (path, c) => {
-    const cookie = document.cookie; //TODO: isServer if ssr
+  createEffect(() => (!useIsRouting()() ? refetchRouteData("discoData") : null));
 
-    const proxyFetch = server$(async (url: string, cookie: string) => {
-      console.log(`Fetching '${url}' using '${cookie}'`);
+  const getDiscoData = server$(async (url: string, cookie?: string) => {
+    console.log(`Fetching '${url}' using '${cookie}'`);
 
-      let res;
-      try {
-        res = await fetch(url, {
-          headers: {
-            cookie,
-          },
-        });
-        if (res.status >= 400) {
-          throw new Error(res.statusText ?? "ERROR");
-        }
-        return await res.json();
-      } catch (error) {
-        return { status: await res?.status, error: error.message };
+    let res;
+    try {
+      res = await fetch(url, {
+        headers: {
+          cookie,
+        },
+      });
+      if (res.status >= 400) {
+        throw new Error(res.statusText ?? "ERROR");
       }
-    });
-
-    return await proxyFetch("http://localhost:8080" + path, cookie);
+      return await res.json();
+    } catch (error) {
+      return { status: await res?.status, error: error.message };
+    }
   });
 
-  return [discoData];
+  const discoData: Resource<DiscoData> = createRouteData(
+    async () => {
+      const data = await getDiscoData(API_URL + location.pathname, document.cookie);
+      if (data.error) {
+        return {};
+      } else {
+        return data;
+      }
+    },
+    { key: "discoData" }
+  );
+
+  return { discoData };
 }
 
 const App: Component = () => {
   const rData = useRouteData<typeof AppData>();
-  const [discoData] = rData;
+  const { discoData } = rData;
 
   createEffect(() => {
-    if (!discoData.loading && !!discoData()) {
+    if (!discoData.loading) {
       console.error(discoData());
 
-      const { channelCollection, channel, userData, requestedPaths, status } = discoData();
+      const { channelCollection, channel, userData, requestedPaths } = discoData();
 
       state.channelCollection[1](channelCollection);
       state.channel.name[1](channel?.name);
@@ -78,7 +81,7 @@ const App: Component = () => {
       state.userData[1](userData);
       state.activeChannel[1](requestedPaths?.join("/") ?? "");
 
-      state.displayAuthForm[1](status && status === 403);
+      state.displayAuthForm[1](!userData);
     }
   });
 
