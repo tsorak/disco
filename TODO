@@ -23,6 +23,8 @@ API
 
         ☐ Add channel_users table (remove subscribers, subscriptions columns from channels and users) (Normalise)
           | channel | user |
+
+        ☐ Normalise user sockets column
     
     ☐ Add salt
         
@@ -49,6 +51,8 @@ App
                 ✔ implement ping @done(22-12-30 21:03)
 
             ✔ Authorise using JWT @started(22-12-29 17:34) @done(22-12-29 17:51) @lasted(17m23s)
+
+            ☐ Close socket when logged out, reconnect when logged in
         
         ✔ use lucide icons @done(22-12-01 09:53)
 
@@ -76,4 +80,4 @@ App
           (on isRouting and socket message event)
           ☐ Display an unread count circle on channels and channelCollections
           
-        ☐ UserData component (bottom left)
+        ✔ UserData component (bottom left) @done(23-01-28 17:55)
