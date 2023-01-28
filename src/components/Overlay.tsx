@@ -3,7 +3,7 @@ import { tUserData } from "~/utils/types";
 
 import UserControls from "./UserControls";
 
-const [activeOverlay, setActiveOverlay] = createSignal<string>("");
+const [activeOverlay, setActiveOverlay] = createSignal<string>("", { equals: false });
 
 const Overlay: Component<{ state: { userData: Signal<tUserData> } }> = (props) => {
   const overlayIs = (overlayName: string) => activeOverlay() === overlayName;

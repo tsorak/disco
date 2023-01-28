@@ -5,7 +5,7 @@ import { json, parseCookie, useServerContext } from "solid-start";
 
 import { Component, onMount, createSignal, createEffect, onCleanup, onError, createResource } from "solid-js";
 import { isServer } from "solid-js/web";
-import { A, useLocation, useRouteData } from "@solidjs/router";
+import { A, useIsRouting, useRouteData } from "@solidjs/router";
 
 import { clientSocket } from "~/communication/websocket";
 import ChannelTitle from "~/components/ChannelTitle";
@@ -26,12 +26,13 @@ export interface ChannelCollection {
   name: string;
 }
 
-export function AppData() {
-  const [path, setPath] = createSignal<string>(useLocation().pathname);
+export function AppData({ location }) {
+  const [path, setPath] = createSignal<string>(location.pathname);
   createEffect(() => {
-    setPath(useLocation().pathname);
+    useIsRouting()();
+    setPath(location.pathname);
   });
-  //using useLocation as the Accessor does not work reactivly
+  // using useLocation as the Accessor does not work reactivly
   const [discoData] = createResource(path, async (path, c) => {
     const cookie = document.cookie; //TODO: isServer if ssr
 
@@ -65,7 +66,7 @@ const App: Component = () => {
   const [discoData] = rData;
 
   createEffect(() => {
-    if (!discoData.loading) {
+    if (!discoData.loading && !!discoData()) {
       console.error(discoData());
 
       const { channelCollection, channel, userData, requestedPaths, status } = discoData();

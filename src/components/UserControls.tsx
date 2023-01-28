@@ -3,16 +3,18 @@ import { Camera, LogOut } from "lucide-solid";
 import DiscoAvatar from "./DiscoAvatar";
 
 import { Accessor, Component, JSX } from "solid-js";
-import { useNavigate } from "solid-start";
 import { tUserData } from "~/utils/types";
+import { createServerAction$, redirect } from "solid-start/server";
+import { setActiveOverlay } from "./Overlay";
 
 const UserControls: Component<{ getUserData: Accessor<tUserData> }> = (props) => {
   const { getUserData } = props;
 
-  const navigate = useNavigate();
+  const [, logout] = createServerAction$(async (_, { request }) => redirect("./", { headers: { "Set-Cookie": `discoToken=; Expires=${new Date(0).toUTCString()}; Path=/` } }), { invalidate: "discoData" });
 
-  const handleSignOutClick = (e: MouseEvent) => {
-    navigate("/signout");
+  const handleLogoutClick = (e: MouseEvent) => {
+    setActiveOverlay("");
+    logout();
   };
 
   return (
@@ -37,7 +39,7 @@ const UserControls: Component<{ getUserData: Accessor<tUserData> }> = (props) =>
         <Button>Online</Button>
         <Button>Set Custom Status</Button>
         {Divider()}
-        <Button class="group" onClick={handleSignOutClick}>
+        <Button class="group" onClick={handleLogoutClick}>
           <LogOut size={"19px"} class="group-hover:text-red-600" />
           Sign out
         </Button>
