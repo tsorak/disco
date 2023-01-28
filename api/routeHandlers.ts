@@ -10,6 +10,25 @@ import { create, isAuthorised } from "./authorisation.ts";
 import { Cookie } from "https://deno.land/x/another_cookiejar@v5.0.1/mod.ts";
 import * as bcrypt from "https://deno.land/x/bcrypt@v0.4.1/mod.ts";
 
+type ChannelData = { name: string; avatar: string; path: string };
+export type DiscoData = {
+  requestedPaths: string[];
+  channelCollection: ChannelData[] | undefined;
+  channel: {
+    name: string | null;
+    messages: MessageRow[];
+    members: {
+      uuid: string;
+      name: string;
+    }[];
+  } | undefined;
+  userData: {
+    uuid: string;
+    name: string;
+    email: string;
+  };
+};
+
 function readChannel(channelID: string, requester: UserRow["uuid"]) {
   if (!channelID) return;
 
@@ -54,8 +73,6 @@ function readChannelCollection(
   requester: UserRow["uuid"],
 ) {
   if (!collectionID) return;
-
-  type ChannelData = { name: string; avatar: string; path: string };
 
   const user = (dbQuery(db).table("users").read({
     column: "subscriptions",
@@ -116,13 +133,15 @@ const appHandler = async (req: Request) => {
       const channel = readChannel(channelPath[1], uuid);
       const userData = readUserData(uuid);
 
+      const discoData: DiscoData = {
+        requestedPaths: channelPath,
+        channelCollection,
+        channel,
+        userData,
+      };
+
       return new Response(
-        JSON.stringify({
-          requestedPaths: channelPath,
-          channelCollection,
-          channel,
-          userData,
-        }),
+        JSON.stringify(discoData),
         {
           status: 200,
         },
