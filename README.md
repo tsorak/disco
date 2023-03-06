@@ -1,4 +1,8 @@
-# SolidStart
+# Disco
+
+![Animation showcasing an interaction between two users in a chat room](https://github.com/tsorak/disco/blob/master/disco_demo.gif)
+
+## SolidStart
 
 Everything you need to build a Solid project, powered by [`solid-start`](https://start.solidjs.com);
 
