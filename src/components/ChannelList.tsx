@@ -13,10 +13,14 @@ const ChannelList: Component<{ channels: Accessor<ChannelCollection[]>; activeCo
   return (
     <div class="p-2 flex flex-col">
       <Show when={isDms()}>
-        <button class="p-3 flex-grow dark:hover:bg-[rgba(79,84,92,0.4)] dark:hover:text-dc-primary-text-dark flex items-center transition-colors rounded gap-3 select-none">
-          <Users />
-          <span>Friends</span>
-        </button>
+        <div class="flex rounded overflow-hidden h-[44px]">
+          <button class="p-2 flex-grow dark:hover:bg-[rgba(79,84,92,0.4)] dark:hover:text-dc-primary-text-dark flex items-center transition-colors rounded gap-2 select-none">
+            <div class="p-1">
+              <Users />
+            </div>
+            <span>Friends</span>
+          </button>
+        </div>
         <p class="text-xs font-semibold dark:hover:text-dc-primary-text-dark transition-colors py-2 mt-3 mx-2 select-none">DIRECT MESSAGES</p>
       </Show>
       <ul class="flex flex-col justify-center gap-2">
